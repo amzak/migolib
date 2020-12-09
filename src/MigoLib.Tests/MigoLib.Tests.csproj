@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <IsPackable>false</IsPackable>
+        <AssemblyName>MigoLib.Tests</AssemblyName>
+        <RootNamespace>MigoLib.Tests</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="FluentAssertions" Version="5.10.3" />
+        <PackageReference Include="NUnit" Version="3.12.0" />
+        <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
+        <PackageReference Include="SuperSimpleTcp" Version="2.1.0.12" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\MigoLib\MigoLib.csproj" />
+    </ItemGroup>
+
+</Project>

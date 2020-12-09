@@ -1,1 +1,5 @@
 build/
+*/**/BenchmarkDotNet.Artifacts/
+/src/.idea/
+*.DotSettings
+*.DotSettings.user
