@@ -6,16 +6,16 @@ namespace MigoLib.Benchmarks
 {
     public class ParseModelBenchmarks
     {
-        private MigoState _migoState;
-        private PositionalSerializer<MigoState> _positionalSerializer;
-        private ReadOnlySpanAction<char, MigoState> _intParser;
-        private ReadOnlySpanAction<char, MigoState> _doubleParser;
+        private MigoStateModel _migoStateModel;
+        private PositionalSerializer<MigoStateModel> _positionalSerializer;
+        private ReadOnlySpanAction<char, MigoStateModel> _intParser;
+        private ReadOnlySpanAction<char, MigoStateModel> _doubleParser;
 
         [GlobalSetup]
         public void Init()
         {
-            _migoState = new MigoState();
-            _positionalSerializer = new PositionalSerializer<MigoState>(';')
+            _migoStateModel = new MigoStateModel();
+            _positionalSerializer = new PositionalSerializer<MigoStateModel>(';')
                 .Field(x => x.BedTemp)
                 .Field(x => x.HeadX);
             
@@ -28,20 +28,20 @@ namespace MigoLib.Benchmarks
         {
             var paramStr = "90";
             int.TryParse(paramStr, out var intParam);
-            _migoState.BedTemp = intParam;
+            _migoStateModel.BedTemp = intParam;
             
             paramStr = "0.0";
             double.TryParse(paramStr, out var doubleParam);
-            _migoState.HeadX = doubleParam;
+            _migoStateModel.HeadX = doubleParam;
         }
 
         [Benchmark]
         public void ParseModel()
         {
             var param = "90";
-            _intParser(param, _migoState);
+            _intParser(param, _migoStateModel);
             param = "0.0";
-            _doubleParser(param, _migoState);
+            _doubleParser(param, _migoStateModel);
         }
     }
 }

@@ -18,7 +18,7 @@ namespace MigoLib.Tests
         public void Should_deserialize_state_input()
         {
             var serializer = PositionalSerializer
-                .CreateFor<MigoState>(';')
+                .CreateFor<MigoStateModel>(';')
                 .FixedString("state")
                 .Skip(2)
                 .Field(x => x.NozzleTemp)
@@ -36,7 +36,7 @@ namespace MigoLib.Tests
         public void Should_set_iserror_on_deserialization_accordingly(string marker, bool expected)
         {
             var serializer = PositionalSerializer
-                .CreateFor<MigoState>(';')
+                .CreateFor<MigoStateModel>(';')
                 .FixedString(marker);
 
             _ = serializer.Parse(StateInput);
