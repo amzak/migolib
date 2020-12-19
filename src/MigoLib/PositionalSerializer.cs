@@ -122,30 +122,44 @@ namespace MigoLib
         public T Parse(ReadOnlySpan<char> input)
         {
             int from = 0;
+            int to = 0;
             int fieldIndex = 0;
-
-            for (int i = 0; i < input.Length; i++)
+            int length = input.Length;
+            
+            for (int i = 0; i < length; i++)
             {
                 if (input[i] != _delimiter)
                 {
                     continue;
                 }
 
-                var to = i;
-                var slice = input.Slice(from, to - from);
-
-                var parser = GetParser(fieldIndex++);
-                parser(slice, _data);
-
-                if (IsError || fieldIndex >= _fieldParsers.Count)
+                to = i;
+                if (!TryParseField(input, from, to, fieldIndex))
                 {
-                    break;
+                    return _data;
                 }
 
                 from = to + 1;
+                fieldIndex++;
             }
 
+            if (to == length - 1) 
+                return _data;
+            
+            to = length - 1;
+            TryParseField(input, from, to, fieldIndex);
+            
             return _data;
+        }
+
+        private bool TryParseField(ReadOnlySpan<char> input, int from, int to, int fieldIndex)
+        {
+            var slice = input.Slice(from, to - from);
+
+            var parser = GetParser(fieldIndex);
+            parser(slice, _data);
+
+            return !(IsError || fieldIndex == _fieldParsers.Count - 1);
         }
     }
 }
