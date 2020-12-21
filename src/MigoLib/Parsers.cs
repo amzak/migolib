@@ -1,3 +1,4 @@
+using MigoLib.GCode;
 using MigoLib.State;
 using MigoLib.ZOffset;
 
@@ -8,5 +9,7 @@ namespace MigoLib
         public static IResultParser<ZOffsetModel> GetZOffset => new GetZOffsetParser();
         
         public static IResultParser<MigoStateModel> GetState => new GetStateParser();
+        
+        public static IResultParser<GCodeResultModel> GetGCodeResult => new GCodeResultParser();
     }
 }

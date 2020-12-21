@@ -3,7 +3,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using MigoLib.State;
-using MigoLib.ZOffset;
 
 namespace MigoLib
 {
@@ -80,6 +79,28 @@ namespace MigoLib
             {
                 await _socket.ConnectAsync(_endPoint);
             }
+        }
+        
+        public async Task<bool> ExecuteGCode(string[] lines)
+        {
+            await EnsureConnection();
+            
+            byte[] buffer = new byte[100];
+            
+            var chainResult = CommandChain
+                .On(buffer)
+                .ExecuteGCode(lines)
+                .AsResult(Parsers.GetGCodeResult);
+
+            await Write(buffer)
+                .ConfigureAwait(false);
+
+            var reader = new MigoReader(_socket);
+
+            var result = await reader.Get(chainResult)
+                .ConfigureAwait(false);
+
+            return result.Success;
         }
     }
 }

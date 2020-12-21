@@ -62,5 +62,23 @@ namespace MigoLib.Tests
 
             actualOffset.Should().Be(expectedOffset);
         }
+        
+        [Test]
+        public async Task Should_execute_g_code()
+        {
+            _fakeMigo.FixReply($"@#gcodedone;#@");
+
+            var gcode = new[]
+            {
+                "G92 X5",
+                "G0 F1200 X0",
+                "G0 X5"
+            };
+
+            var result = await _migo.ExecuteGCode(gcode);
+
+            result.Should().BeTrue();
+        }
+        
     }
 }
