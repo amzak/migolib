@@ -4,12 +4,6 @@ using System.IO;
 
 namespace MigoLib
 {
-    public static class CommandChainExtensions
-    {
-        public static CommandChainResult<T> AsResult<T>(this CommandChain commands, IResultParser<T> parser) 
-            => new CommandChainResult<T>(commands, parser);
-    }
-    
     public class CommandChain : IDisposable
     {
         private readonly BinaryWriter _writer;
@@ -23,6 +17,9 @@ namespace MigoLib
             _commands = new List<Command>();
         }
 
+        public CommandChainResult<T> AsResult<T>(IResultParser<T> parser) 
+            => new(parser);
+        
         public static CommandChain On(byte[] buffer) 
             => new CommandChain(buffer);
 
