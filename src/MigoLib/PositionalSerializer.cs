@@ -147,7 +147,11 @@ namespace MigoLib
                 return _data;
             
             to = length - 1;
-            TryParseField(input, from, to, fieldIndex);
+
+            if (from != to)
+            {
+                TryParseField(input, from, to, fieldIndex);
+            }
             
             return _data;
         }

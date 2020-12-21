@@ -33,9 +33,4 @@ namespace MigoLib.State
         
         public MigoStateModel Result { get; private set; }
     }
-    
-    
-    
-    
-    
 }
