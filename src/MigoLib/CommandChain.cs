@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace MigoLib
 {
@@ -34,14 +35,16 @@ namespace MigoLib
             _writer?.Dispose();
         }
 
-        public void Execute()
+        public async Task<CommandChain> Execute()
         {
             foreach (var command in _commands)
             {
-                command.Write(_writer);
+                await command.Write(_writer).ConfigureAwait(false);
             }
             
             _writer.Flush();
+
+            return this;
         }
     }
 }

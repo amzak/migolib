@@ -1,4 +1,5 @@
 using System.IO;
+using System.Threading.Tasks;
 
 namespace MigoLib.ZOffset
 {
@@ -11,11 +12,13 @@ namespace MigoLib.ZOffset
             _zOffset = zOffset;
         }
 
-        public override void Write(BinaryWriter writer)
+        public override Task Write(BinaryWriter writer)
         {
             writer.Write("extruderminoffset:");
             writer.Write(_zOffset.ToString("F2"));
             writer.Write(';');
+            
+            return Task.CompletedTask;
         }
     }
 }

@@ -1,9 +1,10 @@
 using System.IO;
+using System.Threading.Tasks;
 
 namespace MigoLib
 {
     public abstract class Command
     {
-        public abstract void Write(BinaryWriter writer);
+        public abstract Task Write(BinaryWriter writer);
     }
 }

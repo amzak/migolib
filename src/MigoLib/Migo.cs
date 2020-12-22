@@ -32,10 +32,12 @@ namespace MigoLib
             
             byte[] buffer = new byte[100];
             
-            var chainResult = CommandChain
+            var chainResult = (await CommandChain
                 .On(buffer)
                 .SetZOffset(zOffset)
                 .GetZOffset()
+                .Execute()
+                .ConfigureAwait(false))
                 .AsResult(Parsers.GetZOffset);
 
             await Write(buffer)
@@ -87,9 +89,11 @@ namespace MigoLib
             
             byte[] buffer = new byte[100];
             
-            var chainResult = CommandChain
+            var chainResult = (await CommandChain
                 .On(buffer)
                 .ExecuteGCode(lines)
+                .Execute()
+                .ConfigureAwait(false))
                 .AsResult(Parsers.GetGCodeResult);
 
             await Write(buffer)
