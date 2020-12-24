@@ -1,3 +1,4 @@
+using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
 using MigoLib.State;
@@ -79,6 +80,21 @@ namespace MigoLib.Tests
 
             result.Should().BeTrue();
         }
-        
+
+        [Test]
+        public async Task Should_upload_gcode_file()
+        {
+            var filePath = "Resources/3DBenchy.gcode";
+            var fileInfo = new FileInfo(filePath);
+            
+            _fakeMigo
+                .ExpectBytes(fileInfo.Length) // size of 3DBenchy.gcode
+                .FixReply($"@#fend;#@");
+
+            var result = await _migo.UploadGCodeFile(filePath)
+                .ConfigureAwait(false);
+
+            result.Success.Should().BeTrue();
+        }
     }
 }

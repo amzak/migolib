@@ -46,5 +46,17 @@ namespace MigoLib
 
             return this;
         }
+
+        public async Task<CommandChain> ExecuteInChunks(ChunkedCommand command)
+        {
+            await foreach (var chunk in command.Chunks)
+            {
+                Console.WriteLine($"writing chunk of {chunk.Length.ToString()} bytes...");
+                _writer.Write(chunk.Span);
+                _writer.Flush();
+            }
+            
+            return this;
+        }
     }
 }

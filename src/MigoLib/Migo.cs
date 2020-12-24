@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using MigoLib.FileUpload;
 using MigoLib.State;
 
 namespace MigoLib
@@ -105,6 +106,29 @@ namespace MigoLib
                 .ConfigureAwait(false);
 
             return result.Success;
+        }
+
+        public async Task<UploadGCodeResult> UploadGCodeFile(string fileName)
+        {
+            await EnsureConnection();
+            
+            byte[] buffer = new byte[UploadGCodeCommand.ChunkSize];
+
+            var file = new GCodeFile(fileName);
+            
+            var chainResult = (await CommandChain
+                    .On(buffer)
+                    .ExecuteInChunks(new UploadGCodeCommand(file)))
+                    .AsResult(Parsers.UploadGCodeResult);
+            
+            await Write(buffer)
+                .ConfigureAwait(false);
+
+            var reader = new MigoReader(_socket);
+            var result = await reader.Get(chainResult)
+                .ConfigureAwait(false);
+
+            return result;
         }
     }
 }

@@ -18,4 +18,15 @@
       <ProjectReference Include="..\MigoLib\MigoLib.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Resources" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Resources\3DBenchy.gcode" />
+      <Content Include="Resources\3DBenchy.gcode">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
 </Project>
