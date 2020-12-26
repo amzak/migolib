@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -101,15 +102,11 @@ namespace MigoLib
         {
             await EnsureConnection();
             
-            byte[] buffer = new byte[UploadGCodeCommand.ChunkSize];
-
             var file = new GCodeFile(fileName);
+
+            var command = new UploadGCodeCommand(file);
             
-            await CommandChain
-                .On(buffer)
-                .ExecuteInChunks(new UploadGCodeCommand(file));
-            
-            await Write(buffer)
+            await Write(command.Chunks)
                 .ConfigureAwait(false);
 
             var reader = new MigoReader(_socket);
@@ -117,6 +114,15 @@ namespace MigoLib
                 .ConfigureAwait(false);
 
             return result;
+        }
+
+        private async Task Write(IAsyncEnumerable<ReadOnlyMemory<byte>> commandChunks)
+        {
+            await foreach (var chunk in commandChunks)
+            {
+                var bytesSent = await _socket.SendAsync(chunk, SocketFlags.None)
+                    .ConfigureAwait(false);
+            }
         }
     }
 }

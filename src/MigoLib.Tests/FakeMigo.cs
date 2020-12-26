@@ -14,6 +14,7 @@ namespace MigoLib.Tests
 
         private readonly TcpListener _tcpListener;
         private readonly CancellationTokenSource _tokenSource;
+        private Memory<byte> _buffer;
 
         public FakeMigo(string ip, ushort port)
         {
@@ -32,9 +33,6 @@ namespace MigoLib.Tests
         {
             try
             {
-                var bytesBuf = new byte[_bytesExpected];
-                var buffer = new Memory<byte>(bytesBuf);
-
                 while (!_tokenSource.IsCancellationRequested)
                 {
                     var tcpClient = await _tcpListener.AcceptTcpClientAsync().ConfigureAwait(false);
@@ -44,7 +42,7 @@ namespace MigoLib.Tests
                     var bytesRead = 0;
                     while (bytesRead < _bytesExpected)
                     {
-                        bytesRead += await stream.ReadAsync(buffer, _tokenSource.Token).ConfigureAwait(false);
+                        bytesRead += await stream.ReadAsync(_buffer, _tokenSource.Token).ConfigureAwait(false);
                     }
                     
                     var bytes = Encoding.UTF8.GetBytes(_fixedReply);
@@ -74,6 +72,8 @@ namespace MigoLib.Tests
         public FakeMigo ExpectBytes(long expected)
         {
             _bytesExpected = expected;
+            var bytesBuf = new byte[_bytesExpected];
+            _buffer = new Memory<byte>(bytesBuf);
 
             return this;
         }
