@@ -122,12 +122,12 @@ namespace MigoLib
             return result;
         }
 
-        public async Task<T> Get<T>(CommandChainResult<T> commands)
+        public async Task<T> Get<T>(IResultParser<T> parser)
         {
             _cancellationSource = new CancellationTokenSource();
 
             var readSocketTask = ReadSocketAsync();
-            var readPipeTask = ReadPipeAsync(commands.ResultParser);
+            var readPipeTask = ReadPipeAsync(parser);
             
             var tasks = new[] { readSocketTask, readPipeTask };
 

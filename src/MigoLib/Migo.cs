@@ -12,8 +12,6 @@ namespace MigoLib
         private readonly IPAddress _ip;
         private readonly ushort _port;
 
-        private TcpClient _client;
-
         private bool _isConnected;
         private Socket _socket;
         private IPEndPoint _endPoint;
@@ -22,7 +20,6 @@ namespace MigoLib
         {
             _ip = IPAddress.Parse(ip);
             _port = port;
-            _client = new TcpClient();
             _endPoint = new IPEndPoint(_ip, port);
             _socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
         }
@@ -33,20 +30,19 @@ namespace MigoLib
             
             byte[] buffer = new byte[100];
             
-            var chainResult = (await CommandChain
+            await CommandChain
                 .On(buffer)
                 .SetZOffset(zOffset)
                 .GetZOffset()
                 .Execute()
-                .ConfigureAwait(false))
-                .AsResult(Parsers.GetZOffset);
+                .ConfigureAwait(false);
 
             await Write(buffer)
                 .ConfigureAwait(false);
 
             var reader = new MigoReader(_socket);
 
-            var result = await reader.Get(chainResult)
+            var result = await reader.Get(Parsers.GetZOffset)
                 .ConfigureAwait(false);
 
             return result.ZOffset;
@@ -56,15 +52,9 @@ namespace MigoLib
         {
             await EnsureConnection();
             
-            byte[] buffer = new byte[100];
-            
-            var chainResult = CommandChain
-                .On(buffer)
-                .AsResult(Parsers.GetState);
-            
             var reader = new MigoReader(_socket);
 
-            var result = await reader.Get(chainResult)
+            var result = await reader.Get(Parsers.GetState)
                 .ConfigureAwait(false);
 
             return result;
@@ -90,19 +80,18 @@ namespace MigoLib
             
             byte[] buffer = new byte[100];
             
-            var chainResult = (await CommandChain
+            await CommandChain
                 .On(buffer)
                 .ExecuteGCode(lines)
                 .Execute()
-                .ConfigureAwait(false))
-                .AsResult(Parsers.GetGCodeResult);
+                .ConfigureAwait(false);
 
             await Write(buffer)
                 .ConfigureAwait(false);
 
             var reader = new MigoReader(_socket);
 
-            var result = await reader.Get(chainResult)
+            var result = await reader.Get(Parsers.GetGCodeResult)
                 .ConfigureAwait(false);
 
             return result.Success;
@@ -116,16 +105,15 @@ namespace MigoLib
 
             var file = new GCodeFile(fileName);
             
-            var chainResult = (await CommandChain
-                    .On(buffer)
-                    .ExecuteInChunks(new UploadGCodeCommand(file)))
-                    .AsResult(Parsers.UploadGCodeResult);
+            await CommandChain
+                .On(buffer)
+                .ExecuteInChunks(new UploadGCodeCommand(file));
             
             await Write(buffer)
                 .ConfigureAwait(false);
 
             var reader = new MigoReader(_socket);
-            var result = await reader.Get(chainResult)
+            var result = await reader.Get(Parsers.UploadGCodeResult)
                 .ConfigureAwait(false);
 
             return result;

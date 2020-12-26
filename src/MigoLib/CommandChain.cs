@@ -18,9 +18,6 @@ namespace MigoLib
             _commands = new List<Command>();
         }
 
-        public CommandChainResult<T> AsResult<T>(IResultParser<T> parser) 
-            => new(parser);
-        
         public static CommandChain On(byte[] buffer) 
             => new CommandChain(buffer);
 
