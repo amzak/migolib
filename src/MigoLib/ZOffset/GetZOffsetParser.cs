@@ -20,6 +20,10 @@ namespace MigoLib.ZOffset
             int sequenceLength = (int) sequence.Length;
             Span<char> charBuf = stackalloc char[sequenceLength];
             Encoding.Default.GetChars(sequence.FirstSpan, charBuf);
+
+            string str = charBuf.ToString();
+            Console.WriteLine($"processing: {str}");
+            
             Result = _positionalSerializer.Parse(charBuf);
                 
             return !_positionalSerializer.IsError;

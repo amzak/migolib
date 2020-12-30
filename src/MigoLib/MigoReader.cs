@@ -21,6 +21,8 @@ namespace MigoLib
 
         private CancellationTokenSource _cancellationSource;
 
+        private readonly TimeSpan _timeout = TimeSpan.FromSeconds(60);
+
         public MigoReader(Socket socket)
         {
             _socket = socket;
@@ -29,27 +31,34 @@ namespace MigoLib
 
         private async Task ReadSocketAsync()
         {
-            while (!_cancellationSource.IsCancellationRequested)
+            try
             {
-                var token = _cancellationSource.Token;
-                _buffer = _pipe.Writer.GetMemory(BufferSize);
-                var arraySegment = GetArray(_buffer);
-
-                var bytesRead = await _socket.ReceiveAsync(arraySegment, SocketFlags.None, token)
-                    .ConfigureAwait(false);
-                if (bytesRead == 0)
+                while (!_cancellationSource.IsCancellationRequested)
                 {
-                    break;
-                }
+                    var token = _cancellationSource.Token;
+                    _buffer = _pipe.Writer.GetMemory(BufferSize);
+                    var arraySegment = GetArray(_buffer);
 
-                _pipe.Writer.Advance(bytesRead);
-                
-                FlushResult result = await _pipe.Writer.FlushAsync().ConfigureAwait(false);
+                    var bytesRead = await _socket.ReceiveAsync(arraySegment, SocketFlags.None, token)
+                        .ConfigureAwait(false);
+                    if (bytesRead == 0)
+                    {
+                        break;
+                    }
 
-                if (result.IsCompleted)
-                {
-                    break;
+                    _pipe.Writer.Advance(bytesRead);
+
+                    FlushResult result = await _pipe.Writer.FlushAsync().ConfigureAwait(false);
+
+                    if (result.IsCompleted)
+                    {
+                        break;
+                    }
                 }
+            }
+            catch (OperationCanceledException _)
+            {
+                // nop
             }
 
             await _pipe.Writer.CompleteAsync()
@@ -67,9 +76,7 @@ namespace MigoLib
                 var position = ProcessBuffer(result, resultParser);
 
                 reader.AdvanceTo(position, position);
-
-            } 
-            while (!result.IsCompleted);
+            } while (!result.IsCompleted && !_cancellationSource.IsCancellationRequested);
 
             await reader.CompleteAsync().ConfigureAwait(false);
 
@@ -96,15 +103,13 @@ namespace MigoLib
                 }
 
                 offset += resultBuffer.Length + _startMarker.Length + _endMarker.Length;
-            } 
-            while (true);
+            } while (!_cancellationSource.IsCancellationRequested);
 
             return incomingBuffer.GetPosition(offset);
         }
 
         private void ParseBuffer(in ReadOnlySequence<byte> sequence)
         {
-            
         }
 
         private static ArraySegment<byte> GetArray(Memory<byte> memory)
@@ -124,15 +129,14 @@ namespace MigoLib
 
         public async Task<T> Get<T>(IResultParser<T> parser)
         {
-            _cancellationSource = new CancellationTokenSource();
+            _cancellationSource = new CancellationTokenSource(_timeout);
 
             var readSocketTask = ReadSocketAsync();
             var readPipeTask = ReadPipeAsync(parser);
-            
-            var tasks = new[] { readSocketTask, readPipeTask };
 
-            await Task.WhenAll(tasks).ConfigureAwait(false);
-            
+            await Task.WhenAll(readSocketTask, readPipeTask)
+                .ConfigureAwait(false);
+
             return readPipeTask.Result;
         }
     }

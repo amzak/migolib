@@ -7,12 +7,14 @@ namespace MigoLib
 {
     public class CommandChain : IDisposable
     {
+        private readonly byte[] _buffer;
         private readonly BinaryWriter _writer;
 
         private readonly List<Command> _commands;
 
         private CommandChain(byte[] buffer)
         {
+            _buffer = buffer;
             var stream = new MemoryStream(buffer);
             _writer = new BinaryWriter(stream);
             _commands = new List<Command>();
@@ -32,7 +34,7 @@ namespace MigoLib
             _writer?.Dispose();
         }
 
-        public async Task<CommandChain> Execute()
+        public async Task<int> Execute()
         {
             foreach (var command in _commands)
             {
@@ -40,20 +42,23 @@ namespace MigoLib
             }
             
             _writer.Flush();
-
-            return this;
+            
+            return (int) _writer.BaseStream.Position;
         }
 
-        public async Task<CommandChain> ExecuteInChunks(ChunkedCommand command)
+        public IEnumerable<ReadOnlyMemory<byte>> AsChunks()
         {
-            await foreach (var chunk in command.Chunks)
+            var memory = new ReadOnlyMemory<byte>(_buffer);
+            int pos = 0;
+            foreach (var command in _commands)
             {
-                Console.WriteLine($"writing chunk of {chunk.Length.ToString()} bytes...");
-                _writer.Write(chunk.Span);
-                _writer.Flush();
+                var prevPos = _writer.BaseStream.Position;
+                command.Write(_writer);
+                int bytesCount = (int) (_writer.BaseStream.Position - prevPos);
+                var chunk = memory.Slice(pos, bytesCount);
+                pos += bytesCount;
+                yield return chunk;
             }
-            
-            return this;
         }
     }
 }
