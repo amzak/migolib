@@ -1,5 +1,7 @@
+using System;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace MigoLib.Tests
@@ -20,6 +22,18 @@ namespace MigoLib.Tests
             var actualOffset = await migo.SetZOffset(expectedOffset).ConfigureAwait(false);
 
             actualOffset.Should().Be(expectedOffset);
+        }
+
+        [Test]
+        [Explicit]
+        public async Task Should_get_migo_state()
+        {
+            var migo = new Migo(MigoIp, MigoPort);
+
+            var state = await migo.GetState().ConfigureAwait(false);
+            
+            Console.WriteLine(JsonConvert.SerializeObject(state));
+            state.NozzleTemp.Should().BePositive();
         }
     }
 }
