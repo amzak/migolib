@@ -58,10 +58,11 @@ namespace MigoLib.Tests
         {
             var expectedOffset = -0.8d;
             _fakeMigo.FixReply($"@#ZOffsetValue:{expectedOffset.ToString("F2")}#@");
+            _fakeMigo.ExpectBytes(40);
 
-            var actualOffset = await _migo.SetZOffset(expectedOffset);
+            var result = await _migo.SetZOffset(expectedOffset);
 
-            actualOffset.Should().Be(expectedOffset);
+            result.ZOffset.Should().Be(expectedOffset);
         }
         
         [Test]

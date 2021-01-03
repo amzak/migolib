@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using MigoLib.FileUpload;
 using MigoLib.State;
+using MigoLib.ZOffset;
 
 namespace MigoLib
 {
@@ -25,7 +26,7 @@ namespace MigoLib
             _socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
         }
 
-        public async Task<double> SetZOffset(double zOffset)
+        public async Task<ZOffsetModel> SetZOffset(double zOffset)
         {
             await EnsureConnection();
             
@@ -37,15 +38,15 @@ namespace MigoLib
                 .GetZOffset()
                 .AsChunks();
 
-            await Write(chunks)
+            var bytesSent = await Write(chunks)
                 .ConfigureAwait(false);
             
             var reader = new MigoReader(_socket);
 
             var result = await reader.Get(Parsers.GetZOffset)
                 .ConfigureAwait(false);
-
-            return result.ZOffset;
+            
+            return result;
         }
 
         public async Task<MigoStateModel> GetState()
@@ -58,12 +59,6 @@ namespace MigoLib
                 .ConfigureAwait(false);
 
             return result;
-        }
-
-        private Task<int> Write(byte[] buffer, int length)
-        {
-            ArraySegment<byte> buf = buffer;
-            return _socket.SendAsync(buf.Slice(0, length), SocketFlags.None);
         }
 
         private async Task EnsureConnection()
@@ -98,6 +93,12 @@ namespace MigoLib
             return result.Success;
         }
 
+        private Task<int> Write(byte[] buffer, int length)
+        {
+            ArraySegment<byte> buf = buffer;
+            return _socket.SendAsync(buf.Slice(0, length), SocketFlags.None);
+        }
+        
         public async Task<UploadGCodeResult> UploadGCodeFile(string fileName)
         {
             await EnsureConnection();
@@ -116,23 +117,31 @@ namespace MigoLib
             return result;
         }
 
-        private async Task Write(IAsyncEnumerable<ReadOnlyMemory<byte>> commandChunks)
+        private async Task<int> Write(IAsyncEnumerable<ReadOnlyMemory<byte>> commandChunks)
         {
+            int bytesSent = 0;
+
             await foreach (var chunk in commandChunks)
             {
-                var bytesSent = await _socket.SendAsync(chunk, SocketFlags.None)
+                bytesSent += await _socket.SendAsync(chunk, SocketFlags.None)
                     .ConfigureAwait(false);
             }
+
+            return bytesSent;
         }
         
-        private async Task Write(IEnumerable<ReadOnlyMemory<byte>> chunks)
+        private async Task<int> Write(IEnumerable<ReadOnlyMemory<byte>> chunks)
         {
+            int bytesSent = 0;
+            
             foreach (var chunk in chunks)
             {
                 Console.WriteLine($"processing command chunk of {chunk.Length} bytes");
-                var bytesSent = await _socket.SendAsync(chunk, SocketFlags.None)
+                bytesSent += await _socket.SendAsync(chunk, SocketFlags.None)
                     .ConfigureAwait(false);
             }
+
+            return bytesSent;
         }
     }
 }
