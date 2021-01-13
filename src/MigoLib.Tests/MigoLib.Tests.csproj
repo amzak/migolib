@@ -16,6 +16,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\MigoLib\MigoLib.csproj" />
+      <ProjectReference Include="..\MigoToolCli\MigoToolCli.csproj" />
     </ItemGroup>
 
     <ItemGroup>

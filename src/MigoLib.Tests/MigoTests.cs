@@ -88,9 +88,7 @@ namespace MigoLib.Tests
             var filePath = "Resources/3DBenchy.gcode";
             var fileInfo = new FileInfo(filePath);
             
-            _fakeMigo
-                .ExpectBytes(fileInfo.Length) // size of 3DBenchy.gcode
-                .FixReply($"@#fend;#@");
+            _fakeMigo.FixReply($"@#fend;#@");
 
             var result = await _migo.UploadGCodeFile(filePath)
                 .ConfigureAwait(false);

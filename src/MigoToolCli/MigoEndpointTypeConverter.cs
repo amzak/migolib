@@ -22,11 +22,7 @@ namespace MigoToolCli
 
             var ip = IPAddress.Parse(parts[0]);
             var port = ushort.Parse(parts[1]);
-            var result = new MigoEndpoint
-            {
-                Ip = ip,
-                Port = port
-            };
+            var result = new MigoEndpoint(ip, port);
             
             return result;
         }

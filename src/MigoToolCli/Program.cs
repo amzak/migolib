@@ -2,6 +2,7 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using MigoLib;
 using Command = System.CommandLine.Command;
@@ -10,6 +11,9 @@ namespace MigoToolCli
 {
     class Program
     {
+        private const int Success = 0;
+        private const int Failure = 1;
+        
         static async Task<int> Main(string[] args)
         {
             var zOffsetCommand = new Command("zoffset", "Sets zoffset");
@@ -26,23 +30,34 @@ namespace MigoToolCli
             return await root.InvokeAsync(args).ConfigureAwait(false);
         }
 
-        private static async Task SetZOffset(ParseResult result, double zOffset)
+        private static async Task<int> SetZOffset(ParseResult parseResult, double zOffset)
         {
-            var endpoint = result.RootCommandResult
+            var endpoint = parseResult.RootCommandResult
                 .OptionResult("--endpoint")?
                 .GetValueOrDefault<MigoEndpoint>();
 
             if (endpoint == default)
             {
-                throw new ArgumentException("Invalid endpoint");
+                Console.WriteLine($"Input error: invalid endpoint");
+                return Failure;
             }
 
-            var migo = new Migo(endpoint.Ip.ToString(), endpoint.Port);
-            var resultOffset = await migo.SetZOffset(zOffset)
-                .ConfigureAwait(false);
-            
-            var success = resultOffset.Equals(zOffset);
-            Console.WriteLine(success ? "Ok" : "Fail");
+            try
+            {
+                Console.WriteLine(endpoint);
+                var migo = new Migo(endpoint.Ip.ToString(), endpoint.Port);
+                var result = await migo.SetZOffset(zOffset)
+                    .ConfigureAwait(false);
+                Console.WriteLine($"ZOffset = {result.ZOffset.ToString()}");
+                Console.WriteLine("OK.");
+            }
+            catch (SocketException socketException)
+            {
+                Console.WriteLine($"Connection error: {(int)socketException.SocketErrorCode} {socketException.Message}");
+                return Failure;
+            }
+
+            return Success;
         }
     }
 }

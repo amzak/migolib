@@ -4,22 +4,39 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using MigoToolCli;
 
 namespace MigoLib.Tests
 {
     public class FakeMigo
     {
+        private const int MaxBuffer = 5000;
+        
         private string _fixedReply;
-        private long _bytesExpected;
 
         private readonly TcpListener _tcpListener;
         private readonly CancellationTokenSource _tokenSource;
-        private Memory<byte> _buffer;
+        private readonly Memory<byte> _buffer;
+        private bool _immediateReply;
+        private CancellationTokenSource _timeoutCancellation;
+
+        public int BytesReceived { get; private set; }
+
+        private readonly TimeSpan _receiveTimeout;
 
         public FakeMigo(string ip, ushort port)
+            : this(new MigoEndpoint(ip, port))
         {
+        }
+
+        public FakeMigo(MigoEndpoint endpoint, TimeSpan? receiveTimeout = null)
+        {
+            var bytesBuff = new byte[MaxBuffer];
+            _buffer = new Memory<byte>(bytesBuff);
+            _receiveTimeout = receiveTimeout ?? TimeSpan.FromMilliseconds(500);
             _tokenSource = new CancellationTokenSource();
-            _tcpListener = new TcpListener(IPAddress.Parse(ip), port);
+            _timeoutCancellation = new CancellationTokenSource(_receiveTimeout);
+            _tcpListener = new TcpListener(endpoint.Ip, endpoint.Port);
         }
 
         public void Start()
@@ -31,22 +48,45 @@ namespace MigoLib.Tests
 
         private async Task StartListening()
         {
+            Console.WriteLine("Fake Migo started...");
             try
             {
                 while (!_tokenSource.IsCancellationRequested)
                 {
-                    var tcpClient = await _tcpListener.AcceptTcpClientAsync().ConfigureAwait(false);
+                    var tcpClient = await _tcpListener.AcceptTcpClientAsync()
+                        .ConfigureAwait(false);
                     var clientIp = ((IPEndPoint)tcpClient.Client.RemoteEndPoint)?.Address.ToString();
                     Console.WriteLine($"accepted client from {clientIp}");
                     var stream = tcpClient.GetStream();
-                    var bytesRead = 0;
-                    while (bytesRead < _bytesExpected)
+                    BytesReceived = 0;
+
+                    try
                     {
-                        bytesRead += await stream.ReadAsync(_buffer, _tokenSource.Token).ConfigureAwait(false);
+                        while (!_immediateReply)
+                        {
+                            Console.WriteLine("Fake Migo receiving...");
+                            var received = await stream.ReadAsync(_buffer, _timeoutCancellation.Token)
+                                .ConfigureAwait(false);
+                            BytesReceived += received;
+                            Console.WriteLine($"Fake Migo: received {received.ToString()} total {BytesReceived.ToString()} bytes");
+                        }
+
+                        Console.WriteLine("Fake Migo: out of receive cycle");
+                    }
+                    catch (OperationCanceledException ex)
+                    {
+                        Console.WriteLine("Fake Migo receive timeout");
+                    }
+                    finally
+                    {
+                        _timeoutCancellation = new CancellationTokenSource(_receiveTimeout);
+                        _immediateReply = false;
                     }
                     
+                    Console.WriteLine($"Fake Migo sent {_fixedReply} after receiving {BytesReceived.ToString()} bytes");
+                    
                     var bytes = Encoding.UTF8.GetBytes(_fixedReply);
-                    await stream.WriteAsync(bytes);
+                    await stream.WriteAsync(bytes).ConfigureAwait(false);
                     tcpClient.Close();
                     Console.WriteLine($"client from {clientIp} disconnected");
                 }
@@ -55,6 +95,7 @@ namespace MigoLib.Tests
             {
                 _tcpListener.Stop();
             }
+            Console.WriteLine("Fake Migo stopped.");
         }
 
         public void Stop()
@@ -62,20 +103,15 @@ namespace MigoLib.Tests
             _tokenSource.Cancel();
         }
 
-        public FakeMigo FixReply(string data)
+        public FakeMigo FixReply(string data, bool immediateReply = false)
         {
             _fixedReply = data;
-
+            _immediateReply = immediateReply;
+            
             return this;
         }
 
-        public FakeMigo ExpectBytes(long expected)
-        {
-            _bytesExpected = expected;
-            var bytesBuf = new byte[_bytesExpected];
-            _buffer = new Memory<byte>(bytesBuf);
-
-            return this;
-        }
+        public FakeMigo ReplyZOffset(double zOffset) 
+            => FixReply($"@#ZOffsetValue:{zOffset.ToString("F2")}#@");
     }
 }
