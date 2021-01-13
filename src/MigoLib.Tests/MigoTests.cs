@@ -38,7 +38,7 @@ namespace MigoLib.Tests
         {
             var expected = Some.MigoStateModel;
             var reply = FormatReply(expected);
-            _fakeMigo.FixReply(reply);
+            _fakeMigo.FixReply(reply, true);
 
             var state = await _migo.GetState()
                 .ConfigureAwait(false);
@@ -58,8 +58,7 @@ namespace MigoLib.Tests
         public async Task Should_set_z_offset()
         {
             var expectedOffset = -0.8d;
-            _fakeMigo.FixReply($"@#ZOffsetValue:{expectedOffset.ToString("F2")}#@");
-            _fakeMigo.ExpectBytes(40);
+            _fakeMigo.ReplyZOffset(expectedOffset);
 
             var result = await _migo.SetZOffset(expectedOffset)
                 .ConfigureAwait(false);
@@ -96,6 +95,7 @@ namespace MigoLib.Tests
             var result = await _migo.UploadGCodeFile(filePath)
                 .ConfigureAwait(false);
 
+            _fakeMigo.BytesReceived.Should().BeGreaterThan((int) fileInfo.Length);
             result.Success.Should().BeTrue();
         }
     }
