@@ -40,7 +40,8 @@ namespace MigoLib.Tests
             var reply = FormatReply(expected);
             _fakeMigo.FixReply(reply);
 
-            var state = await _migo.GetState();
+            var state = await _migo.GetState()
+                .ConfigureAwait(false);
 
             state.Should().BeEquivalentTo(expected);
         }
@@ -60,7 +61,8 @@ namespace MigoLib.Tests
             _fakeMigo.FixReply($"@#ZOffsetValue:{expectedOffset.ToString("F2")}#@");
             _fakeMigo.ExpectBytes(40);
 
-            var result = await _migo.SetZOffset(expectedOffset);
+            var result = await _migo.SetZOffset(expectedOffset)
+                .ConfigureAwait(false);
 
             result.ZOffset.Should().Be(expectedOffset);
         }
@@ -77,7 +79,8 @@ namespace MigoLib.Tests
                 "G0 X5"
             };
 
-            var result = await _migo.ExecuteGCode(gcode);
+            var result = await _migo.ExecuteGCode(gcode)
+                .ConfigureAwait(false);
 
             result.Should().BeTrue();
         }
