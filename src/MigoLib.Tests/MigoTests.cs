@@ -1,4 +1,5 @@
 using System.IO;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using FluentAssertions;
 using MigoLib.State;
@@ -87,16 +88,40 @@ namespace MigoLib.Tests
         [Test]
         public async Task Should_upload_gcode_file()
         {
-            var filePath = "Resources/3DBenchy.gcode";
-            var fileInfo = new FileInfo(filePath);
-            
             _fakeMigo.FixReply($"@#fend;#@");
 
-            var result = await _migo.UploadGCodeFile(filePath)
+            await UploadFile().ConfigureAwait(false);
+
+            _fakeMigo.ReceivedBytes.Should().BePositive();
+        }
+
+        private async Task UploadFile()
+        {
+            var filePath = "Resources/3DBenchy.gcode";
+            await _migo.UploadGCodeFile(filePath)
+                .ConfigureAwait(false);
+        }
+
+        [Test]
+        public async Task Should_verify_received_data_with_md5_hash()
+        {
+            var expected = await GetMD5("Resources/3DBenchy.gcode")
                 .ConfigureAwait(false);
 
-            _fakeMigo.BytesReceived.Should().BeGreaterThan((int) fileInfo.Length);
-            result.Success.Should().BeTrue();
+            await UploadFile().ConfigureAwait(false);
+
+            var hash = await _fakeMigo.GetMD5(33)
+                .ConfigureAwait(false);
+
+            hash.Should().BeEquivalentTo(expected);
+        }
+
+        private async Task<byte[]> GetMD5(string fileName)
+        {
+            using var md5 = MD5.Create();
+            await using var stream = File.OpenRead(fileName);
+            
+            return await md5.ComputeHashAsync(stream);
         }
     }
 }

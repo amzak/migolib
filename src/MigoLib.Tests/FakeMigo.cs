@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,8 +22,9 @@ namespace MigoLib.Tests
         private bool _immediateReply;
         private CancellationTokenSource _timeoutCancellation;
 
-        public int BytesReceived { get; private set; }
-
+        private readonly MemoryStream _receiveStream;
+        public long ReceivedBytes => _receiveStream.Length;
+        
         private readonly TimeSpan _receiveTimeout;
 
         public FakeMigo(string ip, ushort port)
@@ -33,6 +36,8 @@ namespace MigoLib.Tests
         {
             var bytesBuff = new byte[MaxBuffer];
             _buffer = new Memory<byte>(bytesBuff);
+            _receiveStream = new MemoryStream(MaxBuffer);
+            
             _receiveTimeout = receiveTimeout ?? TimeSpan.FromMilliseconds(500);
             _tokenSource = new CancellationTokenSource();
             _timeoutCancellation = new CancellationTokenSource(_receiveTimeout);
@@ -57,9 +62,10 @@ namespace MigoLib.Tests
                         .ConfigureAwait(false);
                     var clientIp = ((IPEndPoint)tcpClient.Client.RemoteEndPoint)?.Address.ToString();
                     Console.WriteLine($"accepted client from {clientIp}");
+                    _receiveStream.SetLength(0);
+                    
                     var stream = tcpClient.GetStream();
-                    BytesReceived = 0;
-
+                    
                     try
                     {
                         while (!_immediateReply)
@@ -67,8 +73,10 @@ namespace MigoLib.Tests
                             Console.WriteLine("Fake Migo receiving...");
                             var received = await stream.ReadAsync(_buffer, _timeoutCancellation.Token)
                                 .ConfigureAwait(false);
-                            BytesReceived += received;
-                            Console.WriteLine($"Fake Migo: received {received.ToString()} total {BytesReceived.ToString()} bytes");
+
+                            _receiveStream.Write(_buffer.Slice(0, received).Span);
+                            
+                            Console.WriteLine($"Fake Migo: received {received.ToString()} total {ReceivedBytes.ToString()} bytes");
                         }
 
                         Console.WriteLine("Fake Migo: out of receive cycle");
@@ -81,9 +89,10 @@ namespace MigoLib.Tests
                     {
                         _timeoutCancellation = new CancellationTokenSource(_receiveTimeout);
                         _immediateReply = false;
+                        _receiveStream.Flush();
                     }
                     
-                    Console.WriteLine($"Fake Migo sent {_fixedReply} after receiving {BytesReceived.ToString()} bytes");
+                    Console.WriteLine($"Fake Migo sent {_fixedReply} after receiving {ReceivedBytes.ToString()} bytes");
                     
                     var bytes = Encoding.UTF8.GetBytes(_fixedReply);
                     await stream.WriteAsync(bytes).ConfigureAwait(false);
@@ -113,5 +122,13 @@ namespace MigoLib.Tests
 
         public FakeMigo ReplyZOffset(double zOffset) 
             => FixReply($"@#ZOffsetValue:{zOffset.ToString("F2")}#@");
+
+        public async Task<byte[]> GetMD5(int skip = 0)
+        {
+            using var md5 = MD5.Create();
+            _receiveStream.Position = skip;
+            var hash = await md5.ComputeHashAsync(_receiveStream);
+            return hash;
+        }
     }
 }
