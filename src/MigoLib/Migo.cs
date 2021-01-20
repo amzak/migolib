@@ -117,13 +117,15 @@ namespace MigoLib
             return result;
         }
 
-        private async Task<int> Write(IAsyncEnumerable<ReadOnlyMemory<byte>> commandChunks)
+        private async Task<int> Write(IAsyncEnumerable<CommandChunk> chunks)
         {
             int bytesSent = 0;
 
-            await foreach (var chunk in commandChunks)
+            await foreach (var chunk in chunks)
             {
-                bytesSent += await _socket.SendAsync(chunk, SocketFlags.None)
+                var segment = chunk.AsSegment();
+                
+                bytesSent += await _socket.SendAsync(segment, SocketFlags.None)
                     .ConfigureAwait(false);
             }
 

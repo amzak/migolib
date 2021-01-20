@@ -1,7 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Collections.Generic;
 
 namespace MigoLib.FileUpload
 {
@@ -15,24 +15,27 @@ namespace MigoLib.FileUpload
             _file = file;
         }
 
-        public override IAsyncEnumerable<ReadOnlyMemory<byte>> Chunks => GetChunks();
+        public override IAsyncEnumerable<CommandChunk> Chunks => GetChunks();
 
-        private async IAsyncEnumerable<ReadOnlyMemory<byte>> GetChunks()
+        private async IAsyncEnumerable<CommandChunk> GetChunks()
         {
             await using var fileStream = File.OpenRead(_file.FileName);
             int chunksCount = Math.DivRem((int) fileStream.Length, ChunkSize, out int lastChunkSize);
 
-            var bytes = new byte[ChunkSize];
-            var buffer = new Memory<byte>(bytes);
-            int length;
+            using (var chunk = Chunk.Next(ChunkSize))
+            {
+                var size = WritePreamble(chunk);
+                yield return chunk.Crop(size);
+            }
 
-            var preambleLength = WritePreamble(bytes);
-            yield return buffer.Slice(0, preambleLength);
+            int length;
 
             for (int i = 0; i < chunksCount; i++)
             {
-                length = await fileStream.ReadAsync(buffer).ConfigureAwait(false);
-                yield return buffer.Slice(0, length);
+                using var chunk = Chunk.Next(ChunkSize);
+                length = await fileStream.ReadAsync(chunk.Data, 0, ChunkSize)
+                    .ConfigureAwait(false);
+                yield return chunk.Crop(length);
             }
 
             if (lastChunkSize == 0)
@@ -40,11 +43,15 @@ namespace MigoLib.FileUpload
                 yield break;
             }
 
-            length = await fileStream.ReadAsync(buffer).ConfigureAwait(false);
-            yield return buffer.Slice(0, length);
+            using (var chunk = Chunk.Next(ChunkSize))
+            {
+                length = await fileStream.ReadAsync(chunk.Data, 0, ChunkSize)
+                    .ConfigureAwait(false);
+                yield return chunk.Crop(length);
+            }
         }
-        
-        private int WritePreamble(byte[] buffer)
+
+        private int WritePreamble(CommandChunk chunk)
         {
             var fileName = Path.GetFileName(_file.FileName);
 
@@ -56,7 +63,7 @@ namespace MigoLib.FileUpload
             writer.Append(';');
 
             var preamble = writer.ToString();
-            return Encoding.UTF8.GetBytes(preamble, buffer);
+            return Encoding.UTF8.GetBytes(preamble, chunk.Data);
         }
     }
 }
