@@ -13,6 +13,7 @@ namespace MigoToolCli
             var root = new RootCommand(AppDescription);
             root.AddOption(new Option<MigoEndpoint>("--endpoint"));
 
+            root.AddCommand(new GetCommands());
             root.AddCommand(new SetCommands());
 
             return await root.InvokeAsync(args).ConfigureAwait(false);

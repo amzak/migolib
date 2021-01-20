@@ -49,6 +49,29 @@ namespace MigoLib
             return result;
         }
 
+        public async Task<ZOffsetModel> GetZOffset()
+        {
+            await EnsureConnection();
+            
+            byte[] buffer = new byte[100];
+
+            var length = await CommandChain
+                .On(buffer)
+                .GetZOffset()
+                .Execute()
+                .ConfigureAwait(false);
+    
+            await Write(buffer, length)
+                .ConfigureAwait(false);
+            
+            var reader = new MigoReader(_socket);
+
+            var result = await reader.Get(Parsers.GetZOffset)
+                .ConfigureAwait(false);
+            
+            return result;
+        }
+        
         public async Task<MigoStateModel> GetState()
         {
             await EnsureConnection();
@@ -66,7 +89,6 @@ namespace MigoLib
             if (!_socket.Connected)
             {
                 await _socket.ConnectAsync(_endPoint);
-                Console.WriteLine(_socket.SendBufferSize);
             }
         }
         

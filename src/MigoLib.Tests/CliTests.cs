@@ -39,6 +39,17 @@ namespace MigoLib.Tests
             process.ExitCode.Should().Be(0);
         }
 
+        [Test]
+        public async Task Should_get_z_offset()
+        {
+            _fakeMigo.ReplyZOffset(1.0);
+            
+            var process = await ExecuteCommand(_endpoint, "get zoffset")
+                .ConfigureAwait(false);
+            
+            process.ExitCode.Should().Be(0);
+        }
+
         private async Task<Process> ExecuteCommand(MigoEndpoint endpoint, string command)
         {
             var process = new Process

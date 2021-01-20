@@ -68,6 +68,18 @@ namespace MigoLib.Tests
         }
         
         [Test]
+        public async Task Should_get_z_offset()
+        {
+            var expectedOffset = -0.8d;
+            _fakeMigo.ReplyZOffset(expectedOffset);
+
+            var result = await _migo.GetZOffset()
+                .ConfigureAwait(false);
+
+            result.ZOffset.Should().Be(expectedOffset);
+        }
+
+        [Test]
         public async Task Should_execute_g_code()
         {
             _fakeMigo.FixReply($"@#gcodedone;#@");
