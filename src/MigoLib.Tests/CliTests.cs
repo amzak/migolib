@@ -14,7 +14,7 @@ namespace MigoLib.Tests
         private MigoEndpoint _endpoint;
         private FakeMigo _fakeMigo;
 
-        [SetUp]
+        [OneTimeSetUp]
         public void Init()
         {
             _endpoint = new MigoEndpoint(IPAddress.Parse("127.0.0.1"), 5100);
@@ -22,7 +22,7 @@ namespace MigoLib.Tests
             _fakeMigo.Start();
         }
 
-        [TearDown]
+        [OneTimeTearDown]
         public void Cleanup()
         {
             _fakeMigo.Stop();
