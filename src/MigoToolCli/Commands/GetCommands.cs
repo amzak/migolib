@@ -19,6 +19,7 @@ namespace MigoToolCli.Commands
         private static IEnumerable<Command> Commands()
         {
             yield return new GetZOffsetCommand();
+            yield return new GetStateCommand();
         }
     }
 }

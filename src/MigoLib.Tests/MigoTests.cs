@@ -35,7 +35,7 @@ namespace MigoLib.Tests
         }
 
         [Test]
-        public async Task Should_receive_migo_state()
+        public async Task Should_get_migo_state()
         {
             var expected = Some.MigoStateModel;
             var reply = FormatReply(expected);

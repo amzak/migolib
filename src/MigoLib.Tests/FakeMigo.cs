@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using MigoLib.State;
 using MigoToolCli;
 
 namespace MigoLib.Tests
@@ -122,6 +123,17 @@ namespace MigoLib.Tests
 
         public FakeMigo ReplyZOffset(double zOffset) 
             => FixReply($"@#ZOffsetValue:{zOffset.ToString("F2")}#@");
+
+        public void ReplyState()
+        {
+            var migoStateModel = new MigoStateModel();
+            var reply = $"@#state;{migoStateModel.HeadX.ToString("F2")};" +
+                        $"{migoStateModel.HeadX.ToString("F2")};" +
+                        $"{migoStateModel.BedTemp.ToString()};" +
+                        $"{migoStateModel.NozzleTemp.ToString()};0;10;1;0;0;0#@";
+
+            FixReply(reply);
+        }
 
         public async Task<byte[]> GetMD5(int skip = 0)
         {

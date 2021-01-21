@@ -50,6 +50,17 @@ namespace MigoLib.Tests
             process.ExitCode.Should().Be(0);
         }
 
+        [Test]
+        public async Task Should_get_state()
+        {
+            _fakeMigo.ReplyState();
+            
+            var process = await ExecuteCommand(_endpoint, "get state")
+                .ConfigureAwait(false);
+            
+            process.ExitCode.Should().Be(0);
+        }
+
         private async Task<Process> ExecuteCommand(MigoEndpoint endpoint, string command)
         {
             var process = new Process
