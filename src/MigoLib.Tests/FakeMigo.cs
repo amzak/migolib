@@ -75,6 +75,11 @@ namespace MigoLib.Tests
                             var received = await stream.ReadAsync(_buffer, _timeoutCancellation.Token)
                                 .ConfigureAwait(false);
 
+                            if (received == 0)
+                            {
+                                break;
+                            }
+
                             _receiveStream.Write(_buffer.Slice(0, received).Span);
                             
                             Console.WriteLine($"Fake Migo: received {received.ToString()} total {ReceivedBytes.ToString()} bytes");

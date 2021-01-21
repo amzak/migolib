@@ -21,7 +21,7 @@ namespace MigoLib
 
         private CancellationTokenSource _cancellationSource;
 
-        private readonly TimeSpan _timeout = TimeSpan.FromSeconds(1);
+        private readonly TimeSpan _timeout = TimeSpan.FromSeconds(20);
 
         public MigoReader(Socket socket)
         {
