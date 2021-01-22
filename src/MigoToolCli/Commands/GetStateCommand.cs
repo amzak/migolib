@@ -1,3 +1,6 @@
+using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using MigoLib;
 
@@ -17,6 +20,9 @@ namespace MigoToolCli.Commands
             var migo = new Migo(endpoint.Ip.ToString(), endpoint.Port);
             var result = await migo.GetState()
                 .ConfigureAwait(false);
+
+            var json = JsonSerializer.Serialize(result);
+            Console.WriteLine(json);
         }
     }
 }
