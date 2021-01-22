@@ -1,5 +1,4 @@
 using System;
-using System.CommandLine;
 using System.Threading.Tasks;
 using MigoLib;
 
@@ -9,16 +8,17 @@ namespace MigoToolCli.Commands
     {
         private new const string Name = "zoffset";
         private new const string Description = "Sets zoffset";
-        
-        public SetZOffsetCommand() : base(Name, Description)
+
+        public SetZOffsetCommand() 
+            : base(Name, Description)
         {
-            AddArgument(new Argument<double>("zoffset"));
         }
         
-        protected override async Task Handle(MigoEndpoint endpoint, double zOffset)
+        protected override async Task Handle(MigoEndpoint endpoint, double zoffset)
         {
+            Console.WriteLine($"Setting ZOffset to {zoffset.ToString()}..");
             var migo = new Migo(endpoint.Ip.ToString(), endpoint.Port);
-            var result = await migo.SetZOffset(zOffset)
+            var result = await migo.SetZOffset(zoffset)
                 .ConfigureAwait(false);
             Console.WriteLine($"ZOffset = {result.ZOffset.ToString()}");
         }

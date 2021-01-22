@@ -1,4 +1,5 @@
 using System;
+using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using System.Net.Sockets;
@@ -49,10 +50,11 @@ namespace MigoToolCli.Commands
         protected MigoCliCommand(string name, string description)
             : base(name, description)
         {
+            AddArgument(new Argument<T>("parameter"));
             Handler = CommandHandler.Create<ParseResult, T>(HandleInternal);
         }
 
-        private async Task<int> HandleInternal(ParseResult parseResult, T param)
+        private async Task<int> HandleInternal(ParseResult parseResult, T parameter)
         {
             var endpoint = parseResult.RootCommandResult
                 .OptionResult("--endpoint")?
@@ -66,7 +68,7 @@ namespace MigoToolCli.Commands
 
             try
             {
-                await Handle(endpoint, param).ConfigureAwait(false);
+                await Handle(endpoint, parameter).ConfigureAwait(false);
                 Console.WriteLine("OK.");
             }
             catch (SocketException socketException)
