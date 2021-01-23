@@ -131,6 +131,9 @@ namespace MigoLib.Tests
         
         public FakeMigo ReplyGCodeDone() 
             => FixReply("@#gcodedone;#@");
+        
+        public FakeMigo ReplyUploadCompleted() 
+            => FixReply($"@#fend;#@");
 
         public void ReplyState()
         {

@@ -100,7 +100,7 @@ namespace MigoLib.Tests
         [Test]
         public async Task Should_upload_gcode_file()
         {
-            _fakeMigo.FixReply($"@#fend;#@");
+            _fakeMigo.ReplyUploadCompleted();
 
             await UploadFile().ConfigureAwait(false);
 

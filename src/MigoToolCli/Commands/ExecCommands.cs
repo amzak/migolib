@@ -20,6 +20,7 @@ namespace MigoToolCli.Commands
         private static IEnumerable<Command> Commands()
         {
             yield return new ExecuteGCodeCommand();
+            yield return new ExecuteGCodeFileCommand();
         }
     }
 }
