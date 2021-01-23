@@ -128,6 +128,9 @@ namespace MigoLib.Tests
 
         public FakeMigo ReplyZOffset(double zOffset) 
             => FixReply($"@#ZOffsetValue:{zOffset.ToString("F2")}#@");
+        
+        public FakeMigo ReplyGCodeDone() 
+            => FixReply("@#gcodedone;#@");
 
         public void ReplyState()
         {

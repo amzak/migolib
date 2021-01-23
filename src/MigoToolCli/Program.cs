@@ -15,6 +15,7 @@ namespace MigoToolCli
 
             root.AddCommand(new GetCommands());
             root.AddCommand(new SetCommands());
+            root.AddCommand(new ExecCommands());
 
             return await root.InvokeAsync(args).ConfigureAwait(false);
         }

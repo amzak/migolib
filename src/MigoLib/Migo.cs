@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using MigoLib.FileUpload;
+using MigoLib.GCode;
 using MigoLib.State;
 using MigoLib.ZOffset;
 
@@ -92,7 +93,7 @@ namespace MigoLib
             }
         }
         
-        public async Task<bool> ExecuteGCode(string[] lines)
+        public async Task<GCodeResultModel> ExecuteGCode(string[] lines)
         {
             await EnsureConnection();
             
@@ -112,7 +113,7 @@ namespace MigoLib
             var result = await reader.Get(Parsers.GetGCodeResult)
                 .ConfigureAwait(false);
 
-            return result.Success;
+            return result;
         }
 
         private Task<int> Write(byte[] buffer, int length)

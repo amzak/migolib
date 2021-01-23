@@ -61,6 +61,17 @@ namespace MigoLib.Tests
             process.ExitCode.Should().Be(0);
         }
 
+        [Test]
+        public async Task Should_execute_gcode()
+        {
+            _fakeMigo.ReplyGCodeDone();
+            
+            var process = await ExecuteCommand(_endpoint, "exec gcode \"M851\"")
+                .ConfigureAwait(false);
+            
+            process.ExitCode.Should().Be(0);
+        }
+        
         private async Task<Process> ExecuteCommand(MigoEndpoint endpoint, string command)
         {
             var process = new Process

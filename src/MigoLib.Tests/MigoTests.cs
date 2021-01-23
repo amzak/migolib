@@ -82,7 +82,7 @@ namespace MigoLib.Tests
         [Test]
         public async Task Should_execute_g_code()
         {
-            _fakeMigo.FixReply($"@#gcodedone;#@");
+            _fakeMigo.ReplyGCodeDone();
 
             var gcode = new[]
             {
@@ -94,7 +94,7 @@ namespace MigoLib.Tests
             var result = await _migo.ExecuteGCode(gcode)
                 .ConfigureAwait(false);
 
-            result.Should().BeTrue();
+            result.Success.Should().BeTrue();
         }
 
         [Test]
