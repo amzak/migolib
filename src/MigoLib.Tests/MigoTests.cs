@@ -25,7 +25,7 @@ namespace MigoLib.Tests
         [SetUp]
         public void Setup()
         {
-            _migo = new Migo(Ip, Port);
+            _migo = new Migo(Init.LoggerFactory, Ip, Port);
         }
 
         [OneTimeTearDown]

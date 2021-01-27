@@ -1,7 +1,6 @@
-using System;
 using System.Text.Json;
 using System.Threading.Tasks;
-using MigoLib;
+using Serilog;
 
 namespace MigoToolCli.Commands
 {
@@ -19,12 +18,12 @@ namespace MigoToolCli.Commands
         {
             var lines = command.Split(';');
             
-            var migo = new Migo(endpoint.Ip.ToString(), endpoint.Port);
+            var migo = MigoFactory.Create(endpoint);
             var result = await migo.ExecuteGCode(lines)
                 .ConfigureAwait(false);
             
             var json = JsonSerializer.Serialize(result);
-            Console.WriteLine(json);
+            Log.Information(json);
         }
     }
 }

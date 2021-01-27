@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace MigoLib
 {
@@ -15,6 +16,7 @@ namespace MigoLib
         private readonly byte[] _startMarker = {(byte) '@', (byte) '#'};
         private readonly byte[] _endMarker = {(byte) '#', (byte) '@'};
 
+        private readonly ILogger<MigoReader> _logger;
         private readonly Socket _socket;
         private readonly Pipe _pipe;
         private Memory<byte> _buffer;
@@ -23,8 +25,9 @@ namespace MigoLib
 
         private readonly TimeSpan _timeout = TimeSpan.FromSeconds(20);
 
-        public MigoReader(Socket socket)
+        public MigoReader(ILogger<MigoReader> logger, Socket socket)
         {
+            _logger = logger;
             _socket = socket;
             _pipe = new Pipe();
         }
@@ -129,6 +132,8 @@ namespace MigoLib
 
         public async Task<T> Get<T>(IResultParser<T> parser)
         {
+            _logger.LogDebug("started Migo reader...");
+            
             _cancellationSource = new CancellationTokenSource(_timeout);
 
             var readSocketTask = ReadSocketAsync();
@@ -136,6 +141,8 @@ namespace MigoLib
 
             await Task.WhenAll(readSocketTask, readPipeTask)
                 .ConfigureAwait(false);
+
+            _logger.LogDebug("Migo reader completed");
 
             return readPipeTask.Result;
         }

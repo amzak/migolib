@@ -21,9 +21,6 @@ namespace MigoLib.ZOffset
             Span<char> charBuf = stackalloc char[sequenceLength];
             Encoding.Default.GetChars(sequence.FirstSpan, charBuf);
 
-            string str = charBuf.ToString();
-            Console.WriteLine($"processing: {str}");
-            
             Result = _positionalSerializer.Parse(charBuf);
                 
             return !_positionalSerializer.IsError;

@@ -1,9 +1,9 @@
-using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Serilog;
 using Command = System.CommandLine.Command;
 
 namespace MigoToolCli.Commands
@@ -24,18 +24,18 @@ namespace MigoToolCli.Commands
 
             if (endpoint == default)
             {
-                Console.WriteLine("Input error: invalid endpoint");
+                Log.Error("Invalid endpoint");
                 return ResultCode.Failure;
             }
 
             try
             {
                 await Handle(endpoint).ConfigureAwait(false);
-                Console.WriteLine("OK.");
+                Log.Information("OK.");
             }
             catch (SocketException socketException)
             {
-                Console.WriteLine($"Connection error: {(int)socketException.SocketErrorCode} {socketException.Message}");
+                Log.Error($"{(int)socketException.SocketErrorCode} {socketException.Message}");
                 return ResultCode.Failure;
             }
             
@@ -62,18 +62,18 @@ namespace MigoToolCli.Commands
 
             if (endpoint == default)
             {
-                Console.WriteLine("Input error: invalid endpoint");
+                Log.Error("Invalid endpoint");
                 return ResultCode.Failure;
             }
 
             try
             {
                 await Handle(endpoint, parameter).ConfigureAwait(false);
-                Console.WriteLine("OK.");
+                Log.Information("OK.");
             }
             catch (SocketException socketException)
             {
-                Console.WriteLine($"Connection error: {(int)socketException.SocketErrorCode} {socketException.Message}");
+                Log.Error($"{(int)socketException.SocketErrorCode} {socketException.Message}");
                 return ResultCode.Failure;
             }
             

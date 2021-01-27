@@ -1,6 +1,5 @@
-using System;
 using System.Threading.Tasks;
-using MigoLib;
+using Serilog;
 
 namespace MigoToolCli.Commands
 {
@@ -16,11 +15,11 @@ namespace MigoToolCli.Commands
         
         protected override async Task Handle(MigoEndpoint endpoint, double zoffset)
         {
-            Console.WriteLine($"Setting ZOffset to {zoffset.ToString()}..");
-            var migo = new Migo(endpoint.Ip.ToString(), endpoint.Port);
+            Log.Information($"Setting ZOffset to {zoffset.ToString()}...");
+            var migo = MigoFactory.Create(endpoint);
             var result = await migo.SetZOffset(zoffset)
                 .ConfigureAwait(false);
-            Console.WriteLine($"ZOffset = {result.ZOffset.ToString()}");
+            Log.Information($"ZOffset = {result.ZOffset.ToString()}");
         }
     }
 }

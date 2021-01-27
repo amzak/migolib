@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using MigoToolCli;
 using NUnit.Framework;
+using Serilog;
 
 namespace MigoLib.Tests
 {
@@ -100,8 +101,8 @@ namespace MigoLib.Tests
             await process.WaitForExitAsync();
             var output = await process.StandardOutput.ReadToEndAsync();
             var err = await process.StandardError.ReadToEndAsync();
-            Console.Write(output);
-            Console.Write(err);
+            Log.Information(output);
+            Log.Information(err);
 
             return process;
         }

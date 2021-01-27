@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MigoLib.State;
 using MigoToolCli;
+using Serilog;
 
 namespace MigoLib.Tests
 {
@@ -27,6 +28,7 @@ namespace MigoLib.Tests
         public long ReceivedBytes => _receiveStream.Length;
         
         private readonly TimeSpan _receiveTimeout;
+        private ILogger _log;
 
         public FakeMigo(string ip, ushort port)
             : this(new MigoEndpoint(ip, port))
@@ -43,6 +45,8 @@ namespace MigoLib.Tests
             _tokenSource = new CancellationTokenSource();
             _timeoutCancellation = new CancellationTokenSource(_receiveTimeout);
             _tcpListener = new TcpListener(endpoint.Ip, endpoint.Port);
+
+            _log = Log.ForContext<FakeMigo>();
         }
 
         public void Start()
@@ -54,7 +58,7 @@ namespace MigoLib.Tests
 
         private async Task StartListening()
         {
-            Console.WriteLine("Fake Migo started...");
+            _log.Information("started...");
             try
             {
                 while (!_tokenSource.IsCancellationRequested)
@@ -62,7 +66,7 @@ namespace MigoLib.Tests
                     var tcpClient = await _tcpListener.AcceptTcpClientAsync()
                         .ConfigureAwait(false);
                     var clientIp = ((IPEndPoint)tcpClient.Client.RemoteEndPoint)?.Address.ToString();
-                    Console.WriteLine($"accepted client from {clientIp}");
+                    _log.Information($"accepted client from {clientIp}");
                     _receiveStream.SetLength(0);
                     
                     var stream = tcpClient.GetStream();
@@ -71,7 +75,7 @@ namespace MigoLib.Tests
                     {
                         while (!_immediateReply)
                         {
-                            Console.WriteLine("Fake Migo receiving...");
+                            _log.Information("receiving...");
                             var received = await stream.ReadAsync(_buffer, _timeoutCancellation.Token)
                                 .ConfigureAwait(false);
 
@@ -82,14 +86,14 @@ namespace MigoLib.Tests
 
                             _receiveStream.Write(_buffer.Slice(0, received).Span);
                             
-                            Console.WriteLine($"Fake Migo: received {received.ToString()} total {ReceivedBytes.ToString()} bytes");
+                            _log.Debug($"received {received.ToString()} total {ReceivedBytes.ToString()} bytes");
                         }
 
-                        Console.WriteLine("Fake Migo: out of receive cycle");
+                        _log.Information("receive cycle completed");
                     }
                     catch (OperationCanceledException ex)
                     {
-                        Console.WriteLine("Fake Migo receive timeout");
+                        _log.Debug("receive timeout");
                     }
                     finally
                     {
@@ -98,19 +102,19 @@ namespace MigoLib.Tests
                         _receiveStream.Flush();
                     }
                     
-                    Console.WriteLine($"Fake Migo sent {_fixedReply} after receiving {ReceivedBytes.ToString()} bytes");
+                    _log.Information($"sent {_fixedReply} after receiving {ReceivedBytes.ToString()} bytes");
                     
                     var bytes = Encoding.UTF8.GetBytes(_fixedReply);
                     await stream.WriteAsync(bytes).ConfigureAwait(false);
                     tcpClient.Close();
-                    Console.WriteLine($"client from {clientIp} disconnected");
+                    _log.Information($"client from {clientIp} disconnected");
                 }
             }
             finally
             {
                 _tcpListener.Stop();
             }
-            Console.WriteLine("Fake Migo stopped.");
+            _log.Information("stopped.");
         }
 
         public void Stop()

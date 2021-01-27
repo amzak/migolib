@@ -1,7 +1,6 @@
-using System;
 using System.Text.Json;
 using System.Threading.Tasks;
-using MigoLib;
+using Serilog;
 
 namespace MigoToolCli.Commands
 {
@@ -17,13 +16,13 @@ namespace MigoToolCli.Commands
 
         protected override async Task Handle(MigoEndpoint endpoint, string fileName)
         {
-            Console.WriteLine($"Uploading file from {fileName}...");
-            var migo = new Migo(endpoint.Ip.ToString(), endpoint.Port);
+            Log.Information($"Uploading file from {fileName}...");
+            var migo = MigoFactory.Create(endpoint);
             var result = await migo.UploadGCodeFile(fileName)
                 .ConfigureAwait(false);
             
             var json = JsonSerializer.Serialize(result);
-            Console.WriteLine(json);
+            Log.Information(json);
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using MigoLib.FileUpload;
 using MigoLib.GCode;
 using MigoLib.State;
@@ -18,10 +19,15 @@ namespace MigoLib
         private bool _isConnected;
         private Socket _socket;
         private IPEndPoint _endPoint;
+        
+        private readonly ILogger<Migo> _logger;
+        private readonly ILogger<MigoReader> _readerLogger;
 
-        public Migo(string ip, ushort port)
+        public Migo(ILoggerFactory loggerFactory, string ip, ushort port)
         {
             _ip = IPAddress.Parse(ip);
+            _logger = loggerFactory.CreateLogger<Migo>();
+            _readerLogger = loggerFactory.CreateLogger<MigoReader>();
             _port = port;
             _endPoint = new IPEndPoint(_ip, port);
             _socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
@@ -42,7 +48,7 @@ namespace MigoLib
             var bytesSent = await Write(chunks)
                 .ConfigureAwait(false);
             
-            var reader = new MigoReader(_socket);
+            var reader = new MigoReader(_readerLogger, _socket);
 
             var result = await reader.Get(Parsers.GetZOffset)
                 .ConfigureAwait(false);
@@ -65,7 +71,7 @@ namespace MigoLib
             await Write(buffer, length)
                 .ConfigureAwait(false);
             
-            var reader = new MigoReader(_socket);
+            var reader = new MigoReader(_readerLogger, _socket);
 
             var result = await reader.Get(Parsers.GetZOffset)
                 .ConfigureAwait(false);
@@ -77,7 +83,7 @@ namespace MigoLib
         {
             await EnsureConnection();
             
-            var reader = new MigoReader(_socket);
+            var reader = new MigoReader(_readerLogger, _socket);
 
             var result = await reader.Get(Parsers.GetState)
                 .ConfigureAwait(false);
@@ -108,7 +114,7 @@ namespace MigoLib
             await Write(buffer, length)
                 .ConfigureAwait(false);
 
-            var reader = new MigoReader(_socket);
+            var reader = new MigoReader(_readerLogger, _socket);
 
             var result = await reader.Get(Parsers.GetGCodeResult)
                 .ConfigureAwait(false);
@@ -133,7 +139,7 @@ namespace MigoLib
             await Write(command.Chunks)
                 .ConfigureAwait(false);
 
-            var reader = new MigoReader(_socket);
+            var reader = new MigoReader(_readerLogger, _socket);
             var result = await reader.Get(Parsers.UploadGCodeResult)
                 .ConfigureAwait(false);
 
@@ -161,7 +167,7 @@ namespace MigoLib
             
             foreach (var chunk in chunks)
             {
-                Console.WriteLine($"processing command chunk of {chunk.Length} bytes");
+                _logger.LogDebug($"processing command chunk of {chunk.Length} bytes");
                 bytesSent += await _socket.SendAsync(chunk, SocketFlags.None)
                     .ConfigureAwait(false);
             }
