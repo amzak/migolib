@@ -10,7 +10,7 @@ namespace MigoLib.Tests
     public class IntegrationTests
     {
         private const ushort MigoPort = 10086;
-        private const string MigoIp = "192.168.1.66";
+        private const string MigoIp = "192.168.1.68";
         
         [Test]
         [Explicit]
@@ -34,6 +34,19 @@ namespace MigoLib.Tests
             
             Log.Information(JsonConvert.SerializeObject(state));
             state.NozzleTemp.Should().BePositive();
+        }
+        
+        [Test]
+        [Explicit]
+        public async Task Should_exec_gcode()
+        {
+            var migo = new Migo(Init.LoggerFactory, MigoIp, MigoPort);
+
+            var gcode = "G28 X0 Y0";
+            var result = await migo.ExecuteGCode(new[] {gcode})
+                .ConfigureAwait(false);
+            
+            result.Success.Should().BeTrue();
         }
     }
 }
