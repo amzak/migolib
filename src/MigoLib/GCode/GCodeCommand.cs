@@ -21,7 +21,7 @@ namespace MigoLib.GCode
             foreach (var line in _lines)
             {
                 writer.Write(line.AsSpan());
-                writer.Write(0x0A);
+                writer.Write((sbyte)0x0A);
             }
             writer.Write(';');
             
