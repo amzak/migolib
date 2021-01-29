@@ -7,7 +7,7 @@ namespace MigoLib.FileUpload
 {
     public class UploadGCodeCommand : ChunkedCommand
     {
-        public const int ChunkSize = 1152; // migo constant
+        private const int ChunkSize = 1024 * 20; // migo constant
         private readonly GCodeFile _file;
 
         public UploadGCodeCommand(GCodeFile file)

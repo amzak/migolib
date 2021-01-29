@@ -1,5 +1,3 @@
-using System;
-
 namespace MigoLib.FileUpload
 {
     public class UploadGCodeResult
