@@ -135,5 +135,17 @@ namespace MigoLib.Tests
             
             return await md5.ComputeHashAsync(stream);
         }
+
+        [Test]
+        public async Task Should_get_file_upload_progress_percent()
+        {
+            byte expectedPercent = 10;
+            _fakeMigo.ReplyFilePercent(expectedPercent);
+
+            var percentResult = await _migo.GetFilePercent()
+                .ConfigureAwait(false);
+
+            percentResult.Percent.Should().Be(expectedPercent);
+        }
     }
 }

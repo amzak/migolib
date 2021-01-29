@@ -14,5 +14,7 @@ namespace MigoLib
         public static IResultParser<GCodeResultModel> GetGCodeResult => new GCodeResultParser();
         
         public static IResultParser<UploadGCodeResult> UploadGCodeResult => new UploadGCodeResultParser();
+        
+        public static IResultParser<FilePercentResult> GetFilePercent => new FilePercentResultParser();
     }
 }

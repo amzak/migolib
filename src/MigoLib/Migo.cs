@@ -174,5 +174,17 @@ namespace MigoLib
 
             return bytesSent;
         }
+
+        public async Task<FilePercentResult> GetFilePercent()
+        {
+            await EnsureConnection();
+            
+            var reader = new MigoReader(_readerLogger, _socket);
+
+            var result = await reader.Get(Parsers.GetFilePercent)
+                .ConfigureAwait(false);
+
+            return result;
+        }
     }
 }

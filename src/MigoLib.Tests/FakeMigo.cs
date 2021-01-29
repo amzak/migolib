@@ -157,5 +157,8 @@ namespace MigoLib.Tests
             var hash = await md5.ComputeHashAsync(_receiveStream);
             return hash;
         }
+
+        public void ReplyFilePercent(int percent)
+            => FixReply("@#filepercent:10#@");
     }
 }
