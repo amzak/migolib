@@ -13,9 +13,6 @@ namespace MigoLib
 {
     public class Migo
     {
-        private readonly IPAddress _ip;
-        private readonly ushort _port;
-
         private bool _isConnected;
         private Socket _socket;
         private IPEndPoint _endPoint;
@@ -23,13 +20,13 @@ namespace MigoLib
         private readonly ILogger<Migo> _logger;
         private readonly ILogger<MigoReader> _readerLogger;
 
-        public Migo(ILoggerFactory loggerFactory, string ip, ushort port)
+        public Migo(ILoggerFactory loggerFactory, MigoEndpoint endpoint)
         {
-            _ip = IPAddress.Parse(ip);
             _logger = loggerFactory.CreateLogger<Migo>();
             _readerLogger = loggerFactory.CreateLogger<MigoReader>();
-            _port = port;
-            _endPoint = new IPEndPoint(_ip, port);
+
+            var (ip, port) = endpoint;
+            _endPoint = new IPEndPoint(ip, port);
             _socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
         }
 

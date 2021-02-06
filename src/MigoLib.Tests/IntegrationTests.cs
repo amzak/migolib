@@ -16,7 +16,8 @@ namespace MigoLib.Tests
         [Explicit]
         public async Task Should_set_zoffset_and_receive_correct_response()
         {
-            var migo = new Migo(Init.LoggerFactory, MigoIp, MigoPort);
+            var endpoint = new MigoEndpoint(MigoIp, MigoPort);
+            var migo = new Migo(Init.LoggerFactory, endpoint);
             
             var expectedOffset = -0.8;
             var actualOffset = await migo.SetZOffset(expectedOffset).ConfigureAwait(false);
@@ -28,7 +29,8 @@ namespace MigoLib.Tests
         [Explicit]
         public async Task Should_get_migo_state()
         {
-            var migo = new Migo(Init.LoggerFactory, MigoIp, MigoPort);
+            var endpoint = new MigoEndpoint(MigoIp, MigoPort);
+            var migo = new Migo(Init.LoggerFactory, endpoint);
 
             var state = await migo.GetState().ConfigureAwait(false);
             
@@ -40,7 +42,8 @@ namespace MigoLib.Tests
         [Explicit]
         public async Task Should_exec_gcode()
         {
-            var migo = new Migo(Init.LoggerFactory, MigoIp, MigoPort);
+            var endpoint = new MigoEndpoint(MigoIp, MigoPort);
+            var migo = new Migo(Init.LoggerFactory, endpoint);
 
             var gcode = "G28 X0 Y0";
             var result = await migo.ExecuteGCode(new[] {gcode})

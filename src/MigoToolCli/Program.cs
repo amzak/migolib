@@ -1,5 +1,6 @@
 ﻿using System.CommandLine;
 using System.Threading.Tasks;
+using MigoLib;
 using MigoToolCli.Commands;
 using Serilog;
 using Serilog.Extensions.Logging;

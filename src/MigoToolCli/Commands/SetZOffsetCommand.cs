@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using MigoLib;
 using Serilog;
 
 namespace MigoToolCli.Commands

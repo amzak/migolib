@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Net;
 
-namespace MigoToolCli
+namespace MigoLib
 {
     public class MigoEndpointTypeConverter : TypeConverter
     {

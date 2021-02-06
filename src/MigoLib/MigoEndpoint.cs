@@ -1,13 +1,13 @@
 using System.ComponentModel;
 using System.Net;
 
-namespace MigoToolCli
+namespace MigoLib
 {
     [TypeConverter(typeof(MigoEndpointTypeConverter))]
-    public class MigoEndpoint
+    public struct MigoEndpoint
     {
-        public IPAddress Ip { get; set; }
-        public ushort Port { get; set; }
+        public IPAddress Ip { get; }
+        public ushort Port { get; }
 
         public MigoEndpoint(IPAddress ip, ushort port)
         {
@@ -21,5 +21,11 @@ namespace MigoToolCli
         }
 
         public override string ToString() => $"{Ip}:{Port.ToString()}";
+
+        public void Deconstruct(out IPAddress ip, out ushort port)
+        {
+            ip = Ip;
+            port = Port;
+        }
     }
 }
