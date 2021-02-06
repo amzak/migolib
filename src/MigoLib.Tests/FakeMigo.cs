@@ -159,6 +159,6 @@ namespace MigoLib.Tests
         }
 
         public void ReplyFilePercent(int percent)
-            => FixReply("@#filepercent:10#@");
+            => FixReply($"@#filepercent:{percent.ToString()}#@");
     }
 }

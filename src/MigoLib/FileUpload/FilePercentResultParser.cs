@@ -11,7 +11,8 @@ namespace MigoLib.FileUpload
         public FilePercentResultParser()
         {
             _positionalSerializer = new PositionalSerializer<FilePercentResult>(':')
-                .FixedString("filepercent");
+                .FixedString("filepercent")
+                .Field(x => x.Percent);
         }
         
         public bool TryParse(in ReadOnlySequence<byte> sequence)

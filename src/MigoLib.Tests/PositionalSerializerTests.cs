@@ -1,4 +1,5 @@
 using FluentAssertions;
+using MigoLib.FileUpload;
 using MigoLib.State;
 using NUnit.Framework;
 
@@ -28,6 +29,18 @@ namespace MigoLib.Tests
             
             migoState.BedTemp.Should().Be(25);
             migoState.NozzleTemp.Should().Be(23);
+        }
+        
+        [Test]
+        public void Should_deserialize_percent_input()
+        {
+            var serializer = new PositionalSerializer<FilePercentResult>(':')
+                .FixedString("filepercent")
+                .Field(x => x.Percent);
+
+            var result = serializer.Parse("filepercent:10");
+
+            result.Percent.Should().Be(10);
         }
         
         [Test]

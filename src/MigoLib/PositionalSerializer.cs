@@ -146,7 +146,7 @@ namespace MigoLib
             if (to == length - 1) 
                 return _data;
             
-            to = length - 1;
+            to = length;
 
             if (from != to)
             {
