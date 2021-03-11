@@ -2,6 +2,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using MigoLib.State;
 using NUnit.Framework;
 
@@ -15,16 +16,20 @@ namespace MigoLib.Tests
         private FakeMigo _fakeMigo;
         private Migo _migo;
 
+        const string GCodeFile = "Resources/3DBenchy.gcode";
+        private long _gCodeSize;
+
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
-            _fakeMigo = new FakeMigo(Ip, Port);
-            _fakeMigo.Start();
-        }
+            var logger = Init.LoggerFactory.CreateLogger<FakeMigo>();
 
-        [SetUp]
-        public void Setup()
-        {
+            var fileInfo = new FileInfo(GCodeFile);
+            _gCodeSize = fileInfo.Length + 33;
+
+            _fakeMigo = new FakeMigo(Ip, Port, logger);
+            _fakeMigo.Start();
+            
             var endpoint = new MigoEndpoint(Ip, Port);
             _migo = new Migo(Init.LoggerFactory, endpoint);
         }
@@ -32,20 +37,20 @@ namespace MigoLib.Tests
         [OneTimeTearDown]
         public void OneTimeTearDown()
         {
+            _migo.Dispose();
             _fakeMigo.Stop();
         }
 
         [Test]
         public async Task Should_get_migo_state()
         {
-            var expected = Some.MigoStateModel;
-            var reply = FormatReply(expected);
-            _fakeMigo.FixReply(reply, true);
+            _fakeMigo
+                .ReplyMode(FakeMigoMode.Stream); // state can only be responded as incoming stream
 
             var state = await _migo.GetState()
                 .ConfigureAwait(false);
 
-            state.Should().BeEquivalentTo(expected);
+            state.Should().BeEquivalentTo(Some.FixedStateModel);
         }
 
         private string FormatReply(MigoStateModel migoStateModel)
@@ -60,19 +65,23 @@ namespace MigoLib.Tests
         public async Task Should_set_z_offset()
         {
             var expectedOffset = -0.8d;
-            _fakeMigo.ReplyZOffset(expectedOffset);
+            _fakeMigo
+                .ReplyMode(FakeMigoMode.RequestReply)
+                .ReplyZOffset(expectedOffset);
 
             var result = await _migo.SetZOffset(expectedOffset)
                 .ConfigureAwait(false);
 
             result.ZOffset.Should().Be(expectedOffset);
         }
-        
+
         [Test]
         public async Task Should_get_z_offset()
         {
             var expectedOffset = -0.8d;
-            _fakeMigo.ReplyZOffset(expectedOffset);
+            _fakeMigo
+                .ReplyMode(FakeMigoMode.Reply)
+                .ReplyZOffset(expectedOffset);
 
             var result = await _migo.GetZOffset()
                 .ConfigureAwait(false);
@@ -83,7 +92,9 @@ namespace MigoLib.Tests
         [Test]
         public async Task Should_execute_g_code()
         {
-            _fakeMigo.ReplyGCodeDone();
+            _fakeMigo
+                .ReplyMode(FakeMigoMode.RequestReply)
+                .ReplyGCodeDone();
 
             var gcode = new[]
             {
@@ -101,7 +112,10 @@ namespace MigoLib.Tests
         [Test]
         public async Task Should_upload_gcode_file()
         {
-            _fakeMigo.ReplyUploadCompleted();
+            _fakeMigo
+                .ReplyMode(FakeMigoMode.RequestReply)
+                .ReplyUploadCompleted()
+                .ExpectBytes(_gCodeSize);
 
             await UploadFile().ConfigureAwait(false);
 
@@ -110,16 +124,20 @@ namespace MigoLib.Tests
 
         private async Task UploadFile()
         {
-            var filePath = "Resources/3DBenchy.gcode";
-            await _migo.UploadGCodeFile(filePath)
+            await _migo.UploadGCodeFile(GCodeFile)
                 .ConfigureAwait(false);
         }
 
         [Test]
         public async Task Should_verify_received_data_with_md5_hash()
         {
-            var expected = await GetMD5("Resources/3DBenchy.gcode")
+            var expected = await GetMD5(GCodeFile)
                 .ConfigureAwait(false);
+
+            _fakeMigo
+                .ReplyMode(FakeMigoMode.RequestReply)
+                .ReplyUploadCompleted()
+                .ExpectBytes(_gCodeSize);
 
             await UploadFile().ConfigureAwait(false);
 
@@ -133,7 +151,7 @@ namespace MigoLib.Tests
         {
             using var md5 = MD5.Create();
             await using var stream = File.OpenRead(fileName);
-            
+
             return await md5.ComputeHashAsync(stream);
         }
 
@@ -141,7 +159,9 @@ namespace MigoLib.Tests
         public async Task Should_get_file_upload_progress_percent()
         {
             byte expectedPercent = 10;
-            _fakeMigo.ReplyFilePercent(expectedPercent);
+            _fakeMigo
+                .ReplyMode(FakeMigoMode.Reply)
+                .ReplyFilePercent(expectedPercent);
 
             var percentResult = await _migo.GetFilePercent()
                 .ConfigureAwait(false);

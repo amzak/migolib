@@ -4,7 +4,7 @@ namespace MigoLib.Tests
 {
     public static class Some
     {
-        public static MigoStateModel MigoStateModel 
+        public static MigoStateModel FixedStateModel 
             => new MigoStateModel
             {
                 BedTemp = 100,

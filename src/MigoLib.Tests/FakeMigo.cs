@@ -1,52 +1,61 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using MigoLib.State;
-using MigoToolCli;
-using Serilog;
 
 namespace MigoLib.Tests
 {
     public class FakeMigo
     {
         private const int MaxBuffer = 5000;
-        
+
         private string _fixedReply;
 
         private readonly TcpListener _tcpListener;
         private readonly CancellationTokenSource _tokenSource;
         private readonly Memory<byte> _buffer;
-        private bool _immediateReply;
-        private CancellationTokenSource _timeoutCancellation;
 
         private readonly MemoryStream _receiveStream;
         public long ReceivedBytes => _receiveStream.Length;
-        
-        private readonly TimeSpan _receiveTimeout;
-        private ILogger _log;
 
-        public FakeMigo(string ip, ushort port)
-            : this(new MigoEndpoint(ip, port))
+        private readonly ILogger<FakeMigo> _log;
+
+        private FakeMigoMode _mode;
+        private IReadOnlyCollection<string> _streamReplies;
+        private long _bytesExpected;
+
+        public FakeMigo(string ip, ushort port, ILogger<FakeMigo> logger)
+            : this(new MigoEndpoint(ip, port), logger)
         {
         }
 
-        public FakeMigo(MigoEndpoint endpoint, TimeSpan? receiveTimeout = null)
+        public FakeMigo(MigoEndpoint endpoint, ILogger<FakeMigo> logger)
         {
             var bytesBuff = new byte[MaxBuffer];
             _buffer = new Memory<byte>(bytesBuff);
             _receiveStream = new MemoryStream(MaxBuffer);
-            
-            _receiveTimeout = receiveTimeout ?? TimeSpan.FromMilliseconds(500);
+
             _tokenSource = new CancellationTokenSource();
-            _timeoutCancellation = new CancellationTokenSource(_receiveTimeout);
             _tcpListener = new TcpListener(endpoint.Ip, endpoint.Port);
 
-            _log = Log.ForContext<FakeMigo>();
+            _log = logger;
+
+            _streamReplies = PopulateStreamReplies()
+                .ToList();
+        }
+
+        private IEnumerable<string> PopulateStreamReplies()
+        {
+            yield return FakeReplies.State;
+            yield return FakeReplies.Status;
         }
 
         public void Start()
@@ -58,86 +67,134 @@ namespace MigoLib.Tests
 
         private async Task StartListening()
         {
-            _log.Information("started...");
+            _log.LogInformation("started...");
+
             try
             {
                 while (!_tokenSource.IsCancellationRequested)
                 {
-                    var tcpClient = await _tcpListener.AcceptTcpClientAsync()
-                        .ConfigureAwait(false);
-                    var clientIp = ((IPEndPoint)tcpClient.Client.RemoteEndPoint)?.Address.ToString();
-                    _log.Information($"accepted client from {clientIp}");
-                    _receiveStream.SetLength(0);
-                    
-                    var stream = tcpClient.GetStream();
-                    
-                    try
+                    _log.LogInformation("accepting new clients...");
+                    using (var tcpClient = await _tcpListener.AcceptTcpClientAsync().ConfigureAwait(false))
                     {
-                        while (!_immediateReply)
-                        {
-                            _log.Information("receiving...");
-                            var received = await stream.ReadAsync(_buffer, _timeoutCancellation.Token)
-                                .ConfigureAwait(false);
+                        var clientIp = ((IPEndPoint) tcpClient.Client.RemoteEndPoint)?.Address.ToString();
+                        _log.LogInformation($"accepted client from {clientIp}");
 
-                            if (received == 0)
-                            {
-                                break;
-                            }
-
-                            _receiveStream.Write(_buffer.Slice(0, received).Span);
-                            
-                            _log.Debug($"received {received.ToString()} total {ReceivedBytes.ToString()} bytes");
-                        }
-
-                        _log.Information("receive cycle completed");
-                    }
-                    catch (OperationCanceledException ex)
-                    {
-                        _log.Debug("receive timeout");
-                    }
-                    finally
-                    {
-                        _timeoutCancellation = new CancellationTokenSource(_receiveTimeout);
-                        _immediateReply = false;
-                        _receiveStream.Flush();
-                    }
+                        await HandleClient(tcpClient)
+                            .ConfigureAwait(false);
                     
-                    _log.Information($"sent {_fixedReply} after receiving {ReceivedBytes.ToString()} bytes");
-                    
-                    var bytes = Encoding.UTF8.GetBytes(_fixedReply);
-                    await stream.WriteAsync(bytes).ConfigureAwait(false);
-                    tcpClient.Close();
-                    _log.Information($"client from {clientIp} disconnected");
+                        _log.LogInformation($"client from {clientIp} disconnected");
+                    }
                 }
             }
             finally
             {
                 _tcpListener.Stop();
             }
-            _log.Information("stopped.");
+
+            _log.LogInformation("stopped.");
         }
+
+        private async Task HandleClient(TcpClient tcpClient)
+        {
+            var stream = tcpClient.GetStream();
+
+            _log.LogInformation($"handling client {tcpClient.Client.LocalEndPoint} in {_mode.ToString()} mode");
+
+            switch (_mode)
+            {
+                case FakeMigoMode.Reply | FakeMigoMode.Request:
+                    await HandleRequestReply(stream)
+                        .ConfigureAwait(false);
+                    break;
+                case FakeMigoMode.Reply:
+                    await HandleImmediateReply(stream)
+                        .ConfigureAwait(false);
+                    break;
+                case FakeMigoMode.Stream:
+                    await HandleReplyStream(stream)
+                        .ConfigureAwait(false);
+                    break;
+            }
+        }
+
+        private async Task HandleReplyStream(NetworkStream stream)
+        {
+            foreach (var streamReply in _streamReplies)
+            {
+                await WriteReply(stream, streamReply)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        private async Task HandleRequestReply(NetworkStream stream)
+        {
+            long receivedTotal = 0;
+            _receiveStream.SetLength(0);
+
+            if (_bytesExpected == default)
+            {
+                _bytesExpected = 1; // at least receive smth
+            }
+
+            while (receivedTotal < _bytesExpected)
+            {
+                var received = await stream.ReadAsync(_buffer /*, _timeoutCancellation.Token*/)
+                    .ConfigureAwait(false);
+
+                if (received == 0)
+                {
+                    break;
+                }
+
+                receivedTotal += received;
+
+                _receiveStream.Write(_buffer.Slice(0, received).Span);
+                _receiveStream.Flush();
+
+                _log.LogDebug($"received {received.ToString()} total {receivedTotal.ToString()} bytes");
+            }
+
+            await WriteReply(stream, _fixedReply)
+                .ConfigureAwait(false);
+
+            _bytesExpected = 0;
+        }
+
+        private async Task WriteReply(NetworkStream stream, string reply)
+        {
+            var bytes = Encoding.UTF8.GetBytes(reply);
+            await stream.WriteAsync(bytes).ConfigureAwait(false);
+            _log.LogInformation($"sent {reply}");
+        }
+
+        private Task HandleImmediateReply(NetworkStream stream) => WriteReply(stream, _fixedReply);
 
         public void Stop()
         {
             _tokenSource.Cancel();
         }
 
-        public FakeMigo FixReply(string data, bool immediateReply = false)
+        public FakeMigo FixReply(string data)
         {
             _fixedReply = data;
-            _immediateReply = immediateReply;
-            
+
             return this;
         }
 
-        public FakeMigo ReplyZOffset(double zOffset) 
+        public FakeMigo ReplyZOffset(double zOffset)
             => FixReply($"@#ZOffsetValue:{zOffset.ToString("F2")}#@");
-        
-        public FakeMigo ReplyGCodeDone() 
+
+        public FakeMigo ReplyGCodeDone()
             => FixReply("@#gcodedone;#@");
-        
-        public FakeMigo ReplyUploadCompleted() 
+
+        public FakeMigo ReplyUploadCompleted()
             => FixReply($"@#fend;#@");
+
+        public FakeMigo ReplyMode(FakeMigoMode mode)
+        {
+            _mode = mode;
+            return this;
+        }
 
         public void ReplyState()
         {
@@ -160,5 +217,11 @@ namespace MigoLib.Tests
 
         public void ReplyFilePercent(int percent)
             => FixReply($"@#filepercent:{percent.ToString()}#@");
+
+        public FakeMigo ExpectBytes(long size)
+        {
+            _bytesExpected = size;
+            return this;
+        }
     }
 }

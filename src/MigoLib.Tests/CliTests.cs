@@ -1,9 +1,8 @@
-using System;
 using System.Diagnostics;
 using System.Net;
 using System.Threading.Tasks;
 using FluentAssertions;
-using MigoToolCli;
+using Microsoft.Extensions.Logging;
 using NUnit.Framework;
 using Serilog;
 
@@ -19,7 +18,8 @@ namespace MigoLib.Tests
         public void Init()
         {
             _endpoint = new MigoEndpoint(IPAddress.Parse("127.0.0.1"), 5100);
-            _fakeMigo = new FakeMigo(_endpoint, TimeSpan.FromSeconds(5));
+            var logger = Tests.Init.LoggerFactory.CreateLogger<FakeMigo>();
+            _fakeMigo = new FakeMigo(_endpoint, logger);
             _fakeMigo.Start();
         }
 

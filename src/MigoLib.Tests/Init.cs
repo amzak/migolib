@@ -16,7 +16,7 @@ namespace MigoLib.Tests
                 .MinimumLevel.Debug()
                 .Enrich.FromLogContext()
                 .WriteTo
-                    .NUnitOutput(outputTemplate: "[{Level:u3} {SourceContext}] {Message:lj}{NewLine}{Exception}")
+                    .NUnitOutput(outputTemplate: "[{Timestamp:mm:ss:fff} {Level:u3} {SourceContext}] {Message:lj}{NewLine}{Exception}")
                 .CreateLogger();
             
             Log.Logger = log;
