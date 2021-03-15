@@ -29,8 +29,9 @@ namespace MigoLib.Tests
         private readonly ILogger<FakeMigo> _log;
 
         private FakeMigoMode _mode;
-        private IReadOnlyCollection<string> _streamReplies;
+        private readonly IReadOnlyCollection<string> _streamReplies;
         private long _bytesExpected;
+        private int _replyCount;
 
         public FakeMigo(string ip, ushort port, ILogger<FakeMigo> logger)
             : this(new MigoEndpoint(ip, port), logger)
@@ -119,10 +120,15 @@ namespace MigoLib.Tests
 
         private async Task HandleReplyStream(NetworkStream stream)
         {
+            var replyCount = _replyCount == 0 ? 1 : _replyCount;
+
             foreach (var streamReply in _streamReplies)
             {
-                await WriteReply(stream, streamReply)
-                    .ConfigureAwait(false);
+                for (int i = 0; i < replyCount; i++)
+                {
+                    await WriteReply(stream, streamReply)
+                        .ConfigureAwait(false);
+                }
             }
         }
 
@@ -222,6 +228,11 @@ namespace MigoLib.Tests
         {
             _bytesExpected = size;
             return this;
+        }
+
+        public void ReplyCount(int count)
+        {
+            _replyCount = count;
         }
     }
 }

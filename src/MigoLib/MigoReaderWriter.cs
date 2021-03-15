@@ -131,16 +131,25 @@ namespace MigoLib
             _logger.LogDebug("pipe reader started...");
             var reader = _pipe.Reader;
             ReadResult result;
+
+            long consumedTotal = 0;
+            
             do
             {
+                _logger.LogDebug("reading from pipe...");
                 result = await reader.ReadAsync()
                     .ConfigureAwait(false);
+                ReadOnlySequence<byte> buffer = result.Buffer;
 
-                _logger.LogDebug($"reader result {result.IsCompleted} {result.IsCanceled} {result.Buffer.Length}");
+                _logger.LogDebug($"reader result {result.IsCompleted} {result.IsCanceled} {buffer.Length}");
 
-                var position = ProcessBuffer(result);
+                var consumed = ProcessBuffer(ref buffer);
+                consumedTotal += consumed;
+                
+                reader.AdvanceTo(buffer.GetPosition(consumed), buffer.End);
+                //reader.AdvanceTo(buffer.End, buffer.End);
 
-                reader.AdvanceTo(position, position);
+                _logger.LogDebug($"consumed {consumed} consumedTotal {consumedTotal}");
             } 
             while (!result.IsCompleted);
 
@@ -149,12 +158,11 @@ namespace MigoLib
             _logger.LogDebug("pipe reader completed");
         }
 
-        private SequencePosition ProcessBuffer(in ReadResult incoming)
+        private long ProcessBuffer(ref ReadOnlySequence<byte> incomingBuffer)
         {
-            ReadOnlySequence<byte> incomingBuffer = incoming.Buffer;
             var sequenceReader = new SequenceReader<byte>(incomingBuffer);
 
-            long offset = 0;
+            long consumed = 0;
             do
             {
                 if (!sequenceReader.TryReadTo(out ReadOnlySpan<byte> _, _startMarker) ||
@@ -166,18 +174,34 @@ namespace MigoLib
                 ParseStream(resultBuffer);
                 ParseForRequests(resultBuffer);
 
-                offset += resultBuffer.Length + _startMarker.Length + _endMarker.Length;
+                consumed += resultBuffer.Length + _startMarker.Length + _endMarker.Length;
             } while (true);
 
-            return incomingBuffer.GetPosition(offset);
+            _logger.LogDebug($"processed buffer of size {incomingBuffer.Length} offset {consumed}");
+            return consumed;
         }
 
         private void ParseStream(ReadOnlySequence<byte> resultBuffer)
         {
             _logger.LogDebug($"looking for stream response (streams: {_streams.Count})");
-            foreach (var stream in _streams)
+
+            var streamsToContinue = new List<StreamedReply>(_streams.Count);
+            
+            while (_streams.TryTake(out var stream))
             {
+                _logger.LogDebug($"parsing started, buffer {stream.BufferSize}");
                 stream.Parse(resultBuffer);
+                _logger.LogDebug("parsing completed");
+
+                if (!stream.IsCompleted)
+                {
+                    streamsToContinue.Add(stream);
+                }
+            }
+
+            foreach (var stream in streamsToContinue)
+            {
+                _streams.Add(stream);
             }
         }
 
@@ -262,6 +286,9 @@ namespace MigoLib
             var streamedReply = new StreamedReply(parser, token);
             _streams.Add(streamedReply);
 
+            await EnsureConnection().ConfigureAwait(false);
+            EnsureSocketReading();
+
             await foreach (var o in streamedReply)
             {
                 yield return (T) o;
@@ -319,7 +346,6 @@ namespace MigoLib
         {
             _pipe.Writer.Complete();
             _pipe.Reader.Complete();
-            _pipe.Reset();
         }
     }
 }

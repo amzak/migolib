@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MigoLib.FileUpload;
@@ -120,5 +122,8 @@ namespace MigoLib
         {
             _readerWriter?.Dispose();
         }
+
+        public IAsyncEnumerable<MigoStateModel> GetStateStream(CancellationToken token) 
+            => _readerWriter.GetStream(Parsers.GetState, token);
     }
 }

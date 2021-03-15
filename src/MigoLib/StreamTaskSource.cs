@@ -9,11 +9,22 @@ namespace MigoLib
 
         public StreamTaskSource()
         {
-            _manualResetValueTaskSource = new ManualResetValueTaskSourceCore<T>();
+            _manualResetValueTaskSource = new ManualResetValueTaskSourceCore<T>
+            {
+                RunContinuationsAsynchronously = false
+            };
         }
 
-        public void SetResult(T result) 
-            => _manualResetValueTaskSource.SetResult(result);
+        public bool IsCompleted()
+        {
+            var token = _manualResetValueTaskSource.Version;
+            return _manualResetValueTaskSource.GetStatus(token) == ValueTaskSourceStatus.Succeeded;
+        }
+
+        public void SetResult(T result)
+        {
+            _manualResetValueTaskSource.SetResult(result);
+        }
 
         public void GetResult(short token) 
             => _manualResetValueTaskSource.GetResult(token);
@@ -24,6 +35,10 @@ namespace MigoLib
         public void OnCompleted(Action<object?> continuation, object? state, short token, ValueTaskSourceOnCompletedFlags flags) 
             => _manualResetValueTaskSource.OnCompleted(continuation, state, token, flags);
 
-        public void Reset() => _manualResetValueTaskSource.Reset();
+        public short Reset()
+        {
+            _manualResetValueTaskSource.Reset();
+            return _manualResetValueTaskSource.Version;
+        }
     }
 }
