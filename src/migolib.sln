@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MigoLib.Benchmarks", "MigoL
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MigoToolCli", "MigoToolCli\MigoToolCli.csproj", "{89151908-4330-43C7-B2BC-F49E8A94164E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MigoToolGui", "MigoToolGui\MigoToolGui.csproj", "{15BF6CBC-1CEB-4562-8E43-3144AAD9BC5E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -86,5 +88,17 @@ Global
 		{89151908-4330-43C7-B2BC-F49E8A94164E}.Release|x64.Build.0 = Release|Any CPU
 		{89151908-4330-43C7-B2BC-F49E8A94164E}.Release|x86.ActiveCfg = Release|Any CPU
 		{89151908-4330-43C7-B2BC-F49E8A94164E}.Release|x86.Build.0 = Release|Any CPU
+		{15BF6CBC-1CEB-4562-8E43-3144AAD9BC5E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15BF6CBC-1CEB-4562-8E43-3144AAD9BC5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15BF6CBC-1CEB-4562-8E43-3144AAD9BC5E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{15BF6CBC-1CEB-4562-8E43-3144AAD9BC5E}.Debug|x64.Build.0 = Debug|Any CPU
+		{15BF6CBC-1CEB-4562-8E43-3144AAD9BC5E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{15BF6CBC-1CEB-4562-8E43-3144AAD9BC5E}.Debug|x86.Build.0 = Debug|Any CPU
+		{15BF6CBC-1CEB-4562-8E43-3144AAD9BC5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15BF6CBC-1CEB-4562-8E43-3144AAD9BC5E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{15BF6CBC-1CEB-4562-8E43-3144AAD9BC5E}.Release|x64.ActiveCfg = Release|Any CPU
+		{15BF6CBC-1CEB-4562-8E43-3144AAD9BC5E}.Release|x64.Build.0 = Release|Any CPU
+		{15BF6CBC-1CEB-4562-8E43-3144AAD9BC5E}.Release|x86.ActiveCfg = Release|Any CPU
+		{15BF6CBC-1CEB-4562-8E43-3144AAD9BC5E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
