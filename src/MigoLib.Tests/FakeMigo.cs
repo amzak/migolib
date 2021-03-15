@@ -32,6 +32,7 @@ namespace MigoLib.Tests
         private readonly IReadOnlyCollection<string> _streamReplies;
         private long _bytesExpected;
         private int _replyCount;
+        private CancellationToken _streamCancellationToken;
 
         public FakeMigo(string ip, ushort port, ILogger<FakeMigo> logger)
             : this(new MigoEndpoint(ip, port), logger)
@@ -115,6 +116,22 @@ namespace MigoLib.Tests
                     await HandleReplyStream(stream)
                         .ConfigureAwait(false);
                     break;
+                case FakeMigoMode.RealStream:
+                    await HandleReplyRealStream(stream)
+                        .ConfigureAwait(false);
+                    break;
+            }
+        }
+
+        private async Task HandleReplyRealStream(NetworkStream stream)
+        {
+            while (!_streamCancellationToken.IsCancellationRequested || !_tokenSource.IsCancellationRequested)
+            {
+                await WriteReply(stream, FakeReplies.RandomState)
+                    .ConfigureAwait(false);
+
+                await Task.Delay(1000, _streamCancellationToken)
+                    .ConfigureAwait(false);
             }
         }
 
@@ -199,6 +216,13 @@ namespace MigoLib.Tests
         public FakeMigo ReplyMode(FakeMigoMode mode)
         {
             _mode = mode;
+            return this;
+        }
+
+        public FakeMigo ReplyRealStream(CancellationToken token)
+        {
+            _mode = FakeMigoMode.RealStream;
+            _streamCancellationToken = token;
             return this;
         }
 

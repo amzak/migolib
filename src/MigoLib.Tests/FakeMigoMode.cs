@@ -8,6 +8,7 @@ namespace MigoLib.Tests
         Reply,
         Request,
         Stream,
+        RealStream,
         RequestReply = Request | Reply
     }
 }
