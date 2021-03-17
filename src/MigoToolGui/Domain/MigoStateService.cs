@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MigoLib;
 using MigoLib.State;
+using MigoLib.ZOffset;
 using MigoToolGui.Bootstrap;
 
 namespace MigoToolGui.Domain
@@ -26,6 +28,11 @@ namespace MigoToolGui.Domain
         public IAsyncEnumerable<MigoStateModel> GetStateStream(CancellationToken token)
             => _migo.GetStateStream(token);
 
+        public Task<ZOffsetModel> GetZOffset() => _migo.GetZOffset();
+        
+        public Task<ZOffsetModel> SetZOffset(double zOffset) 
+            => _migo.SetZOffset(zOffset);
+        
         public void Dispose()
         {
             _tokenSource.Cancel();
