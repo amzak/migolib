@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Disposables;
@@ -11,6 +12,10 @@ namespace MigoToolGui.ViewModels
 {
     public class MainWindowViewModel : ReactiveObject, IActivatableViewModel
     {
+        public ViewModelActivator Activator { get; }
+
+        public DateTime StartedAt { get; }
+        
         private readonly MigoStateService _migoStateService;
         private double _nozzleT;
 
@@ -29,6 +34,7 @@ namespace MigoToolGui.ViewModels
         }
         
         private double _zOffset;
+        private CancellationTokenSource _cancellationTokenSource;
 
         public double ZOffset
         {
@@ -36,50 +42,53 @@ namespace MigoToolGui.ViewModels
             set => this.RaiseAndSetIfChanged(ref _zOffset, value);
         }
         
-        public ViewModelActivator Activator { get; }
-
         public ReactiveCommand<double, Unit> SetZOffsetCommand { get; }
 
+        public ObservableCollection<TemperaturePoint> NozzleTValues { get; set; }
+        public ObservableCollection<TemperaturePoint> BedTValues { get; set; }
+        
         public MainWindowViewModel(MigoStateService migoStateService)
         {
+            StartedAt = DateTime.Now;
+
+            NozzleTValues = new ObservableCollection<TemperaturePoint>();
+            BedTValues = new ObservableCollection<TemperaturePoint>();
+
             Activator = new ViewModelActivator();
+            _cancellationTokenSource = new();
 
             _migoStateService = migoStateService;
-
-            CancellationTokenSource cancellationTokenSource = new();
-
+            
             SetZOffsetCommand = ReactiveCommand.Create<double>(SetZOffset);
-
-            this.WhenActivated(disposable =>
-            {
-                _migoStateService.GetStateStream(cancellationTokenSource.Token)
-                    .ToObservable()
-                    .ObserveOn(RxApp.MainThreadScheduler)
-                    .Subscribe(state =>
-                    {
-                        NozzleT = state.NozzleTemp;
-                        BedT = state.BedTemp;
-                    });
-                
-                Observable
-                    .StartAsync(_migoStateService.GetZOffset, RxApp.TaskpoolScheduler)
-                    .ObserveOn(RxApp.MainThreadScheduler)
-                    .Subscribe(model => InitialZOffsetValue(model.ZOffset));
-
-                Disposable
-                    .Create(cancellationTokenSource, source =>
-                    {
-                        source.Cancel();
-                    })
-                    .DisposeWith(disposable);
-            });
+            
+            this.WhenActivated(OnActivated);
         }
-        
+
+        private void OnActivated(CompositeDisposable disposable)
+        {
+            _migoStateService.GetStateStream(_cancellationTokenSource.Token)
+                .ToObservable()
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(state =>
+                {
+                    NozzleT = state.NozzleTemp;
+                    BedT = state.BedTemp;
+                    var nozzlePoint = new TemperaturePoint(DateTime.Now.Subtract(StartedAt), state.NozzleTemp);
+                    var bedPoint = new TemperaturePoint(DateTime.Now.Subtract(StartedAt), state.BedTemp);
+                    NozzleTValues.Add(nozzlePoint);
+                    BedTValues.Add(bedPoint);
+                });
+
+            Observable.StartAsync(_migoStateService.GetZOffset, RxApp.TaskpoolScheduler)
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(model => InitialZOffsetValue(model.ZOffset));
+
+            Disposable.Create(_cancellationTokenSource, source => { source.Cancel(); })
+                .DisposeWith(disposable);
+        }
+
         private void InitialZOffsetValue(double zOffset) => ZOffset = zOffset;
 
-        private void SetZOffset(double zOffset)
-        {
-            _migoStateService.SetZOffset(zOffset);
-        }
+        private void SetZOffset(double zOffset) => _migoStateService.SetZOffset(zOffset);
     }
 }

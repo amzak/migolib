@@ -3,77 +3,206 @@
         xmlns:vm="using:MigoToolGui.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        xmlns:oxy="clr-namespace:OxyPlot.Avalonia;assembly=OxyPlot.Avalonia"
+        mc:Ignorable="d" d:DesignWidth="800"
+        SizeToContent="Height"
         x:Class="MigoToolGui.Views.MainWindow"
-        Title="MigoToolGui">
+        Title="MigoToolGui"
+        Padding="10">
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
     </Design.DataContext>
     
-    <Grid Margin="10">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="250" />
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        <Grid Grid.Row="0" Grid.Column="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="100" />
-                <ColumnDefinition Width="100" />
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <TextBlock Text="Head X" Grid.Row="0" Grid.Column="0"/>
-            <TextBlock Text="Head Y" Grid.Row="1" Grid.Column="0"/>
-            <TextBlock Text="Nozzle T" Grid.Row="2" Grid.Column="0"/>
-            <TextBlock Text="Bed T" Grid.Row="3" Grid.Column="0"/>
+    <Window.Styles>
 
-            <TextBlock Text="0" Grid.Row="0" Grid.Column="1"/>
-            <TextBlock Text="0" Grid.Row="1" Grid.Column="1"/>
-            <TextBlock Text="{Binding NozzleT}" Grid.Row="2" Grid.Column="1"/>
-            <TextBlock Text="{Binding BedT}" Grid.Row="3" Grid.Column="1"/>
-        </Grid>
-        <StackPanel Grid.Row="1" Orientation="Horizontal">
+        <Style Selector="TabItem">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="TabStripItem:selected">
+            <Setter Property="Foreground" Value="{DynamicResource Background}"/>
+        </Style>
+    </Window.Styles>
+    
+    <StackPanel Orientation="Vertical">
+        <StackPanel Orientation="Horizontal">
+            <TextBlock
+                Foreground="Gray"
+                Margin="0"
+                Width="80"
+                VerticalAlignment="Center"
+                Text="Connection"/>
+            <ComboBox
+                Margin="5, 0, 0,0"
+                Width="150"
+                VerticalAlignment="Center"
+                HorizontalContentAlignment="Right"
+                SelectedIndex="0">
+                <ComboBoxItem>127.0.0.1</ComboBoxItem>
+                <ComboBoxItem>192.168.2.57</ComboBoxItem>
+            </ComboBox>
+            <TextBlock
+                Margin="5, 0, 0,0"
+                Width="30"
+                TextAlignment="Right"
+                VerticalAlignment="Center"
+                Text="OK"/>
+
+            <TextBlock
+                Foreground="Gray"
+                Margin="20, 0, 0,0"
+                Width="50"
+                VerticalAlignment="Center"
+                Text="Nozzle T"/>
+            <TextBlock
+                Margin="5, 0, 0,0"
+                Width="40"
+                VerticalAlignment="Center"
+                Text="{Binding NozzleT, StringFormat=\{0:000.0\}}"/>
+            
             <TextBlock 
-                VerticalAlignment="Stretch"
-                Margin="0,5,0,0">Z offset</TextBlock>
-            <NumericUpDown 
-                Margin="5,0"
-                Minimum="-10.0"
-                Maximum="10.0"
-                Increment="0.05"
-                FormatString="0.00"
-                VerticalAlignment="Stretch"
-                Value="{Binding ZOffset}"></NumericUpDown>
-            <Button
-                Command="{Binding SetZOffsetCommand}"
-                CommandParameter="{Binding ZOffset}"
-                Width="150" 
-                Margin="5,0" 
-                VerticalAlignment="Stretch"
-                HorizontalContentAlignment="Center">Apply</Button>
+                Foreground="Gray"
+                Margin="20, 0, 0,0"
+                Width="50"
+                VerticalAlignment="Center"
+                Text="Bed T"/>
+            <TextBlock
+                Margin="5, 0, 0,0"
+                Width="40"
+                VerticalAlignment="Center"
+                Text="{Binding BedT, StringFormat=\{0:000.0\}}"/>
+            
+            <TextBlock
+                Foreground="Gray"
+                Margin="10, 0, 0,0"
+                Width="50"
+                VerticalAlignment="Center"
+                Text="State"/>
+            <TextBlock
+                Margin="5, 0, 0,0"
+                Width="80"
+                TextAlignment="Right"
+                VerticalAlignment="Center"
+                Text="Idle"/>                
         </StackPanel>
-    </Grid>
-
-    <!--Border BorderThickness="1" 
-            Margin="10" 
-            Padding="10" 
-            BorderBrush="Black">
-        <StackPanel>
+        <!--
+        -->
+        <oxy:Plot
+            Height="400"
+            Margin="0,20"
+            PlotMargins="50 0 0 0"
+            LegendTextColor="White"
+            LegendBackground="Black"
+            PlotAreaBorderColor="#555555"
+            PlotAreaBackground="#000000">
+            <oxy:Plot.Axes>
+                <oxy:TimeSpanAxis
+                    Position="Bottom"
+                    StringFormat="mm:ss"
+                    MinimumRange="600"
+                    Title="Time"
+                    TickStyle="Outside"
+                    MajorStep="60"
+                    MinorStep="10"/>
+                <oxy:LinearAxis Position="Left" Minimum="0" Maximum="300" Title="Temperature"/>
+            </oxy:Plot.Axes>
+            <oxy:Plot.Series>
+                <oxy:LineSeries
+                    Name="Nozzle T"
+                    DataFieldX="Time"
+                    DataFieldY="Value"
+                    Items="{Binding Path=NozzleTValues}"
+                    Color="DarkRed" />
+                <oxy:LineSeries
+                    Name="Bed T"
+                    DataFieldX="Time"
+                    DataFieldY="Value"
+                    Items="{Binding Path=BedTValues}"
+                    Color="DarkGoldenrod" />
+            </oxy:Plot.Series>
+        </oxy:Plot>
         
-            <Button>Hello World!</Button>
-            <TextBlock Text="{Binding Greeting}" 
-                       HorizontalAlignment="Center" 
-                       VerticalAlignment="Center"/>
-        </StackPanel>
-    </Border-->
+        <TabControl>
+            <TabItem Header="Print job" >
+                <Border 
+                    BorderThickness="1" 
+                    BorderBrush="Gray"
+                    Padding="10">
+                    <StackPanel Orientation="Vertical" Margin="0, 5">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock 
+                                VerticalAlignment="Stretch"
+                                Margin="0,5,0,0">GCode file</TextBlock>
+                            <Button
+                                Width="150" 
+                                Margin="5,0"
+                                HorizontalContentAlignment="Center">Browse...</Button>
+                            <TextBlock 
+                                VerticalAlignment="Stretch"
+                                Margin="0,5,0,0">1.gcode</TextBlock>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Button
+                                Width="150" 
+                                Margin="5,0"
+                                HorizontalContentAlignment="Center">Start print</Button>
+                            <Button
+                                Width="150" 
+                                Margin="5,0"
+                                HorizontalContentAlignment="Center">Stop</Button>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </TabItem>
+            <TabItem Header="Manual control">
+                <StackPanel Orientation="Vertical">
+                    <Button>Home XYZ</Button>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition />
+                            <ColumnDefinition />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <Button Grid.Row="1">X-</Button>
+                        <Button Grid.Row="1" Grid.Column="2">X+</Button>
+                        <Button Grid.Column="1">Y-</Button>
+                        <Button Grid.Row="2" Grid.Column="1">Y+</Button>
+                        <Button Grid.Row="0" Grid.Column="3">Z+</Button>
+                        <Button Grid.Row="2" Grid.Column="3">Z-</Button>
+                    </Grid>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="Z offset calibration">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock 
+                        VerticalAlignment="Stretch"
+                        Margin="0,5,0,0">Z offset</TextBlock>
+                    <NumericUpDown 
+                        Margin="5,0"
+                        Minimum="-10.0"
+                        Maximum="10.0"
+                        Increment="0.05"
+                        FormatString="0.00"
+                        VerticalAlignment="Stretch"
+                        Value="{Binding ZOffset}"></NumericUpDown>
+                    <Button
+                        Command="{Binding SetZOffsetCommand}"
+                        CommandParameter="{Binding ZOffset}"
+                        Width="150" 
+                        Margin="5,0" 
+                        VerticalAlignment="Stretch"
+                        HorizontalContentAlignment="Center">Apply</Button>
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+        
+    </StackPanel>
 </Window>
