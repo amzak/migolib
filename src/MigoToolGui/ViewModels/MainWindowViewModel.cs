@@ -17,6 +17,8 @@ namespace MigoToolGui.ViewModels
         public DateTime StartedAt { get; }
         
         private readonly MigoStateService _migoStateService;
+        private CancellationTokenSource _cancellationTokenSource;
+
         private double _nozzleT;
 
         public double NozzleT
@@ -34,15 +36,24 @@ namespace MigoToolGui.ViewModels
         }
         
         private double _zOffset;
-        private CancellationTokenSource _cancellationTokenSource;
 
         public double ZOffset
         {
             get => _zOffset;
             set => this.RaiseAndSetIfChanged(ref _zOffset, value);
         }
+
+        private string _gcodeFileName;
+        
+        public string GcodeFileName
+        {
+            get => _gcodeFileName;
+            set => this.RaiseAndSetIfChanged(ref _gcodeFileName, value);
+        }
         
         public ReactiveCommand<double, Unit> SetZOffsetCommand { get; }
+        
+        public ReactiveCommand<string, Unit> GCodeFileSelected { get; set; }
 
         public ObservableCollection<TemperaturePoint> NozzleTValues { get; set; }
         public ObservableCollection<TemperaturePoint> BedTValues { get; set; }
@@ -60,8 +71,16 @@ namespace MigoToolGui.ViewModels
             _migoStateService = migoStateService;
             
             SetZOffsetCommand = ReactiveCommand.Create<double>(SetZOffset);
+            GCodeFileSelected = ReactiveCommand.Create<string>(OnGCodeFileSelected);
             
             this.WhenActivated(OnActivated);
+        }
+
+        private void SetZOffset(double zOffset) => _migoStateService.SetZOffset(zOffset);
+
+        private void OnGCodeFileSelected(string fileName)
+        {
+            GcodeFileName = fileName;
         }
 
         private void OnActivated(CompositeDisposable disposable)
@@ -89,6 +108,5 @@ namespace MigoToolGui.ViewModels
 
         private void InitialZOffsetValue(double zOffset) => ZOffset = zOffset;
 
-        private void SetZOffset(double zOffset) => _migoStateService.SetZOffset(zOffset);
     }
 }

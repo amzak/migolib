@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:oxy="clr-namespace:OxyPlot.Avalonia;assembly=OxyPlot.Avalonia"
+        xmlns:dialogs="clr-namespace:MigoToolGui.Dialogs"
         mc:Ignorable="d" d:DesignWidth="800"
         SizeToContent="Height"
         x:Class="MigoToolGui.Views.MainWindow"
@@ -13,6 +14,10 @@
     <Design.DataContext>
         <vm:MainWindowViewModel/>
     </Design.DataContext>
+    
+    <Window.Resources>
+        <dialogs:OpenFileDialogHelper x:Key="OpenFileDialog" Command="{Binding GCodeFileSelected}"/>
+    </Window.Resources>
     
     <Window.Styles>
 
@@ -138,10 +143,14 @@
                             <Button
                                 Width="150" 
                                 Margin="5,0"
-                                HorizontalContentAlignment="Center">Browse...</Button>
+                                HorizontalContentAlignment="Center"
+                                Command="{Binding Source={StaticResource OpenFileDialog}, Path=ShowDialog}">
+                                Browse...
+                            </Button>
                             <TextBlock 
                                 VerticalAlignment="Stretch"
-                                Margin="0,5,0,0">1.gcode</TextBlock>
+                                Margin="0,5,0,0"
+                                Text="{Binding GcodeFileName}"></TextBlock>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Button
