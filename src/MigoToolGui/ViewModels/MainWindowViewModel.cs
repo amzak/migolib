@@ -14,10 +14,10 @@ namespace MigoToolGui.ViewModels
     {
         public ViewModelActivator Activator { get; }
 
-        public DateTime StartedAt { get; }
+        private DateTime _startedAt;
         
         private readonly MigoStateService _migoStateService;
-        private CancellationTokenSource _cancellationTokenSource;
+        private readonly CancellationTokenSource _cancellationTokenSource;
 
         private double _nozzleT;
 
@@ -60,7 +60,7 @@ namespace MigoToolGui.ViewModels
         
         public MainWindowViewModel(MigoStateService migoStateService)
         {
-            StartedAt = DateTime.Now;
+            _startedAt = DateTime.Now;
 
             NozzleTValues = new ObservableCollection<TemperaturePoint>();
             BedTValues = new ObservableCollection<TemperaturePoint>();
@@ -69,7 +69,8 @@ namespace MigoToolGui.ViewModels
             _cancellationTokenSource = new();
 
             _migoStateService = migoStateService;
-            
+            _gcodeFileName = string.Empty;
+
             SetZOffsetCommand = ReactiveCommand.Create<double>(SetZOffset);
             GCodeFileSelected = ReactiveCommand.Create<string>(OnGCodeFileSelected);
             
@@ -92,8 +93,8 @@ namespace MigoToolGui.ViewModels
                 {
                     NozzleT = state.NozzleTemp;
                     BedT = state.BedTemp;
-                    var nozzlePoint = new TemperaturePoint(DateTime.Now.Subtract(StartedAt), state.NozzleTemp);
-                    var bedPoint = new TemperaturePoint(DateTime.Now.Subtract(StartedAt), state.BedTemp);
+                    var nozzlePoint = new TemperaturePoint(DateTime.Now.Subtract(_startedAt), state.NozzleTemp);
+                    var bedPoint = new TemperaturePoint(DateTime.Now.Subtract(_startedAt), state.BedTemp);
                     NozzleTValues.Add(nozzlePoint);
                     BedTValues.Add(bedPoint);
                 });
