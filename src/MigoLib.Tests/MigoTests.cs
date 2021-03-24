@@ -17,6 +17,7 @@ namespace MigoLib.Tests
         private Migo _migo;
 
         const string GCodeFile = "Resources/3DBenchy.gcode";
+        private readonly string _gCodeFileName = Path.GetFileName(GCodeFile); 
         private long _gCodeSize;
 
         [OneTimeSetUp]
@@ -167,6 +168,19 @@ namespace MigoLib.Tests
                 .ConfigureAwait(false);
 
             percentResult.Percent.Should().Be(expectedPercent);
+        }
+
+        [Test]
+        public async Task Should_start_print_successfully()
+        {
+            _fakeMigo
+                .ReplyMode(FakeMigoMode.RequestReply)
+                .ReplyPrintStarted(_gCodeFileName);
+
+            var result = await _migo.StartPrint(GCodeFile)
+                .ConfigureAwait(false);
+
+            result.Success.Should().BeTrue();
         }
     }
 }

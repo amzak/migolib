@@ -21,6 +21,7 @@ namespace MigoToolCli.Commands
         {
             yield return new ExecuteGCodeCommand();
             yield return new ExecuteGCodeFileCommand();
+            yield return new ExecutePrintCommand();
         }
     }
 }

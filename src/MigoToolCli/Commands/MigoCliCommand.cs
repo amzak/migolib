@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MigoLib;
 using Serilog;
 using Command = System.CommandLine.Command;
+using ParseResult = System.CommandLine.Parsing.ParseResult;
 
 namespace MigoToolCli.Commands
 {

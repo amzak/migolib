@@ -1,5 +1,6 @@
 using MigoLib.FileUpload;
 using MigoLib.GCode;
+using MigoLib.Print;
 using MigoLib.State;
 using MigoLib.ZOffset;
 
@@ -16,5 +17,7 @@ namespace MigoLib
         public static IResultParser<UploadGCodeResult> UploadGCodeResult => new UploadGCodeResultParser();
         
         public static IResultParser<FilePercentResult> GetFilePercent => new FilePercentResultParser();
+
+        public static IResultParser<StartPrintResult> StartPrintResult => new StartPrintResultParser();
     }
 }

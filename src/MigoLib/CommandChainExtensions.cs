@@ -1,4 +1,5 @@
 using MigoLib.GCode;
+using MigoLib.Print;
 using MigoLib.ZOffset;
 
 namespace MigoLib
@@ -22,6 +23,13 @@ namespace MigoLib
         public static CommandChain ExecuteGCode(this CommandChain self, string[] lines)
         {
             var command = new GCodeCommand(lines);
+            self.Append(command);
+            return self;
+        }
+        
+        public static CommandChain StartPrint(this CommandChain self, string file)
+        {
+            var command = new StartPrintCommand(file);
             self.Append(command);
             return self;
         }

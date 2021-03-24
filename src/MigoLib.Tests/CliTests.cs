@@ -84,6 +84,17 @@ namespace MigoLib.Tests
             process.ExitCode.Should().Be(0);
         }
 
+        [Test]
+        public async Task Should_start_printing_selected_file()
+        {
+            _fakeMigo.ReplyPrintStarted("3DBenchy.gcode");
+
+            var process = await ExecuteCommand(_endpoint, "exec print \"3DBenchy.gcode\"")
+                .ConfigureAwait(false);
+            
+            process.ExitCode.Should().Be(0);
+        }
+
         private async Task<Process> ExecuteCommand(MigoEndpoint endpoint, string command)
         {
             var process = new Process

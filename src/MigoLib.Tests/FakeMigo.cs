@@ -258,5 +258,8 @@ namespace MigoLib.Tests
         {
             _replyCount = count;
         }
+
+        public void ReplyPrintStarted(string fileName)
+            => FixReply($"@#printstartsuccess;fn:{fileName}#@");
     }
 }

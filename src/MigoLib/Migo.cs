@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MigoLib.FileUpload;
 using MigoLib.GCode;
+using MigoLib.Print;
 using MigoLib.State;
 using MigoLib.ZOffset;
 
@@ -105,6 +106,25 @@ namespace MigoLib
                 .ConfigureAwait(false);
 
             var result = await _readerWriter.Get(Parsers.UploadGCodeResult)
+                .ConfigureAwait(false);
+
+            return result;
+        }
+
+        public async Task<StartPrintResult> StartPrint(string fileName)
+        {
+            byte[] buffer = new byte[100];
+
+            var length = await CommandChain
+                .On(buffer)
+                .StartPrint(fileName)
+                .ExecuteAsync()
+                .ConfigureAwait(false);
+    
+            await _readerWriter.Write(buffer, length)
+                .ConfigureAwait(false);
+            
+            var result = await _readerWriter.Get(Parsers.StartPrintResult)
                 .ConfigureAwait(false);
 
             return result;
