@@ -34,7 +34,7 @@ namespace MigoLib
             _writer?.Dispose();
         }
 
-        public async Task<int> Execute()
+        public async Task<int> ExecuteAsync()
         {
             foreach (var command in _commands)
             {
@@ -46,14 +46,14 @@ namespace MigoLib
             return (int) _writer.BaseStream.Position;
         }
 
-        public IEnumerable<ReadOnlyMemory<byte>> AsChunks()
+        public async IAsyncEnumerable<ReadOnlyMemory<byte>> AsChunks()
         {
             var memory = new ReadOnlyMemory<byte>(_buffer);
             int pos = 0;
             foreach (var command in _commands)
             {
                 var prevPos = _writer.BaseStream.Position;
-                command.Write(_writer);
+                await command.Write(_writer).ConfigureAwait(false);
                 int bytesCount = (int) (_writer.BaseStream.Position - prevPos);
                 var chunk = memory.Slice(pos, bytesCount);
                 pos += bytesCount;

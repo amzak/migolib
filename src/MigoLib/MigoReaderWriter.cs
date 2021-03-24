@@ -342,6 +342,22 @@ namespace MigoLib
             return bytesSent;
         }
         
+        public async Task<int> Write(IAsyncEnumerable<ReadOnlyMemory<byte>> chunks)
+        {
+            await EnsureConnection()
+                .ConfigureAwait(false);
+
+            int bytesSent = 0;
+
+            await foreach (var chunk in chunks)
+            {
+                bytesSent += await _socket.SendAsync(chunk, SocketFlags.None)
+                    .ConfigureAwait(false);
+            }
+
+            return bytesSent;
+        }
+
         public void Dispose()
         {
             _pipe.Writer.Complete();

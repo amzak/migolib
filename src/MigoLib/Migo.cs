@@ -56,7 +56,7 @@ namespace MigoLib
             var length = await CommandChain
                 .On(buffer)
                 .GetZOffset()
-                .Execute()
+                .ExecuteAsync()
                 .ConfigureAwait(false);
     
             await _readerWriter.Write(buffer, length)
@@ -83,7 +83,7 @@ namespace MigoLib
             var length = await CommandChain
                 .On(buffer)
                 .ExecuteGCode(lines)
-                .Execute()
+                .ExecuteAsync()
                 .ConfigureAwait(false);
 
             await _readerWriter.Write(buffer, length)
