@@ -5,12 +5,12 @@ using Serilog;
 
 namespace MigoToolCli.Commands
 {
-    public class ExecutePrintCommand : MigoCliCommand<string>
+    public class ExecuteStartPrintCommand : MigoCliCommand<string>
     {
         private new const string Name = "print";
         private new const string Description = "Starts printing selected file";
 
-        public ExecutePrintCommand() 
+        public ExecuteStartPrintCommand() 
             : base(Name, Description)
         {
         }

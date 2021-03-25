@@ -95,6 +95,17 @@ namespace MigoLib.Tests
             process.ExitCode.Should().Be(0);
         }
 
+        [Test]
+        public async Task Should_stop_printing()
+        {
+            _fakeMigo.ReplyPrintStopped();
+
+            var process = await ExecuteCommand(_endpoint, "exec stop")
+                .ConfigureAwait(false);
+            
+            process.ExitCode.Should().Be(0);
+        }
+
         private async Task<Process> ExecuteCommand(MigoEndpoint endpoint, string command)
         {
             var process = new Process

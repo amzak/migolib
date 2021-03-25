@@ -19,5 +19,7 @@ namespace MigoLib
         public static IResultParser<FilePercentResult> GetFilePercent => new FilePercentResultParser();
 
         public static IResultParser<StartPrintResult> StartPrintResult => new StartPrintResultParser();
+
+        public static IResultParser<StopPrintResult> StopPrintResult => new StopPrintResultParser();
     }
 }

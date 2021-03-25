@@ -182,5 +182,18 @@ namespace MigoLib.Tests
 
             result.Success.Should().BeTrue();
         }
+        
+        [Test]
+        public async Task Should_stop_print_successfully()
+        {
+            _fakeMigo
+                .ReplyMode(FakeMigoMode.RequestReply)
+                .ReplyPrintStopped();
+
+            var result = await _migo.StopPrint()
+                .ConfigureAwait(false);
+
+            result.Success.Should().BeTrue();
+        }
     }
 }

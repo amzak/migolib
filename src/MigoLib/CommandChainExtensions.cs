@@ -33,5 +33,12 @@ namespace MigoLib
             self.Append(command);
             return self;
         }
+        
+        public static CommandChain StopPrint(this CommandChain self)
+        {
+            var command = new StopPrintCommand();
+            self.Append(command);
+            return self;
+        }
     }
 }

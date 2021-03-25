@@ -261,5 +261,7 @@ namespace MigoLib.Tests
 
         public void ReplyPrintStarted(string fileName)
             => FixReply($"@#printstartsuccess;fn:{fileName}#@");
+
+        public void ReplyPrintStopped() => FixReply("@#stopped;#@");
     }
 }

@@ -130,6 +130,25 @@ namespace MigoLib
             return result;
         }
 
+        public async Task<StopPrintResult> StopPrint()
+        {
+            byte[] buffer = new byte[100];
+
+            var length = await CommandChain
+                .On(buffer)
+                .StopPrint()
+                .ExecuteAsync()
+                .ConfigureAwait(false);
+    
+            await _readerWriter.Write(buffer, length)
+                .ConfigureAwait(false);
+            
+            var result = await _readerWriter.Get(Parsers.StopPrintResult)
+                .ConfigureAwait(false);
+
+            return result;
+        }
+
         public async Task<FilePercentResult> GetFilePercent()
         {
             var result = await _readerWriter.Get(Parsers.GetFilePercent)
