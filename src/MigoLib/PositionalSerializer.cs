@@ -17,7 +17,7 @@ namespace MigoLib
         private readonly List<ReadOnlySpanAction<char, T>> _fieldParsers;
 
         private T _data;
-        private readonly char _delimiter;
+        private char _delimiter;
         
         public bool IsError { get; private set; }
 
@@ -164,6 +164,12 @@ namespace MigoLib
             parser(slice, _data);
 
             return !(IsError || fieldIndex == _fieldParsers.Count - 1);
+        }
+
+        public PositionalSerializer<T> Delimiter(char delimiter)
+        {
+            _delimiter = delimiter;
+            return this;
         }
     }
 }

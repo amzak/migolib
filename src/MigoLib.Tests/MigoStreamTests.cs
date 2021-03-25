@@ -1,10 +1,9 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using NUnit.Framework;
-using Serilog;
 
 namespace MigoLib.Tests
 {
@@ -16,7 +15,9 @@ namespace MigoLib.Tests
 
         private const int TestStreamSize = 10; 
         
+        private Migo _migo;
         private FakeMigo _fakeMigo;
+        private CancellationTokenSource _tokenSource;
 
         [OneTimeSetUp]
         public void OneTimeSetup()
@@ -29,6 +30,20 @@ namespace MigoLib.Tests
                 .ReplyMode(FakeMigoMode.Stream)
                 .ReplyCount(TestStreamSize);
         }
+
+        [SetUp]
+        public void Setup()
+        {
+            var endpoint = new MigoEndpoint(Ip, Port);
+            _migo = new Migo(Init.LoggerFactory, endpoint);
+            _tokenSource = new CancellationTokenSource();
+        }
+
+        [TearDown]
+        public void Cleanup()
+        {
+            _migo.Dispose();
+        }
         
         [OneTimeTearDown]
         public void OneTimeTearDown()
@@ -37,25 +52,41 @@ namespace MigoLib.Tests
         }
 
         [Test]
-        public async Task Should_receive_events_stream_of_known_size()
+        public async Task Should_receive_state_stream_of_known_size()
         {
-            var endpoint = new MigoEndpoint(Ip, Port);
-            using var migo = new Migo(Init.LoggerFactory, endpoint);
-            var tokenSource = new CancellationTokenSource();
-            int maxCount = TestStreamSize;
+            var stream = _migo.GetStateStream(_tokenSource.Token);
             
+            var counter = await RunStreamTest(stream)
+                .ConfigureAwait(false);
+
+            counter.Should().Be(TestStreamSize);
+        }
+
+        [Test]
+        public async Task Should_receive_progress_stream_of_known_size()
+        {
+            var stream = _migo.GetProgressStream(_tokenSource.Token);
+            
+            var counter = await RunStreamTest(stream)
+                .ConfigureAwait(false);
+
+            counter.Should().Be(TestStreamSize);
+        }
+
+        private async Task<int> RunStreamTest<T>(IAsyncEnumerable<T> stream)
+        {
             int counter = 0;
-            await foreach (var _ in migo.GetStateStream(tokenSource.Token))
+            await foreach (var _ in stream)
             {
                 counter++;
 
-                if (counter == maxCount)
+                if (counter == TestStreamSize)
                 {
-                    tokenSource.Cancel();
+                    _tokenSource.Cancel();
                 }
             }
 
-            counter.Should().Be(TestStreamSize);
+            return counter;
         }
     }
 }

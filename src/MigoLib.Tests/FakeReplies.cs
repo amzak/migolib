@@ -32,5 +32,7 @@ namespace MigoLib.Tests
         }
 
         public static string Status => "@#xt;type:3;id:100196#@";
+        
+        public static string FilePercent => "@#filepercent:1#@";
     }
 }

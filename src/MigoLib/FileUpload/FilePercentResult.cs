@@ -1,8 +1,7 @@
 namespace MigoLib.FileUpload
 {
-    public class FilePercentResult
+    public class FilePercentResult : ParseResult
     {
         public byte Percent { get; set; }
-        public bool Success { get; set; }
     }
 }

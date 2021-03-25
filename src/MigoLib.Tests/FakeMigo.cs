@@ -58,6 +58,7 @@ namespace MigoLib.Tests
         {
             yield return FakeReplies.State;
             yield return FakeReplies.Status;
+            yield return FakeReplies.FilePercent;
         }
 
         public void Start()

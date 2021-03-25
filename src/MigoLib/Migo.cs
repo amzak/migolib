@@ -157,12 +157,15 @@ namespace MigoLib
             return result;
         }
 
+        public IAsyncEnumerable<MigoStateModel> GetStateStream(CancellationToken token) 
+            => _readerWriter.GetStream(Parsers.GetState, token);
+
+        public IAsyncEnumerable<FilePercentResult> GetProgressStream(CancellationToken token) 
+            => _readerWriter.GetStream(Parsers.GetFilePercent, token);
+        
         public void Dispose()
         {
             _readerWriter?.Dispose();
         }
-
-        public IAsyncEnumerable<MigoStateModel> GetStateStream(CancellationToken token) 
-            => _readerWriter.GetStream(Parsers.GetState, token);
     }
 }
