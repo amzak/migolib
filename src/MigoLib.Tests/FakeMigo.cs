@@ -138,11 +138,9 @@ namespace MigoLib.Tests
 
         private async Task HandleReplyStream(NetworkStream stream)
         {
-            var replyCount = _replyCount == 0 ? 1 : _replyCount;
-
             foreach (var streamReply in _streamReplies)
             {
-                for (int i = 0; i < replyCount; i++)
+                for (int i = 0; i < _replyCount; i++)
                 {
                     await WriteReply(stream, streamReply)
                         .ConfigureAwait(false);
@@ -255,7 +253,7 @@ namespace MigoLib.Tests
             return this;
         }
 
-        public void ReplyCount(int count)
+        public void StreamReplyCount(int count)
         {
             _replyCount = count;
         }

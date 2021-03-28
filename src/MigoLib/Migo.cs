@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -98,6 +99,15 @@ namespace MigoLib
 
         public async Task<UploadGCodeResult> UploadGCodeFile(string fileName)
         {
+            if (!File.Exists(fileName))
+            {
+                return new UploadGCodeResult
+                {
+                    Success = false,
+                    Error = "File not found"
+                };
+            }
+            
             var file = new GCodeFile(fileName);
 
             var command = new UploadGCodeCommand(file);

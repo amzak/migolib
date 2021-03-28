@@ -147,7 +147,6 @@ namespace MigoLib
                 consumedTotal += consumed;
                 
                 reader.AdvanceTo(buffer.GetPosition(consumed), buffer.End);
-                //reader.AdvanceTo(buffer.End, buffer.End);
 
                 _logger.LogDebug($"consumed {consumed} consumedTotal {consumedTotal}");
             } 

@@ -76,9 +76,9 @@ namespace MigoLib.Tests
         [Test]
         public async Task Should_upload_gcode_file()
         {
-            _fakeMigo.ReplyGCodeDone();
+            _fakeMigo.ReplyUploadCompleted();
             
-            var process = await ExecuteCommand(_endpoint, "exec file \"Resources/3DBenchy.gcode\"")
+            var process = await ExecuteCommand(_endpoint, "exec upload \"Resources/3DBenchy.gcode\"")
                 .ConfigureAwait(false);
             
             process.ExitCode.Should().Be(0);

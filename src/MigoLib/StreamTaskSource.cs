@@ -21,10 +21,11 @@ namespace MigoLib
             return _manualResetValueTaskSource.GetStatus(token) == ValueTaskSourceStatus.Succeeded;
         }
 
-        public void SetResult(T result)
-        {
-            _manualResetValueTaskSource.SetResult(result);
-        }
+        public void SetResult(T result) 
+            => _manualResetValueTaskSource.SetResult(result);
+
+        public void SetException(Exception ex) 
+            => _manualResetValueTaskSource.SetException(ex);
 
         public void GetResult(short token) 
             => _manualResetValueTaskSource.GetResult(token);

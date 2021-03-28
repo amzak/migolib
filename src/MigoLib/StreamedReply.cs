@@ -19,10 +19,17 @@ namespace MigoLib
         {
             _parser = parser;
             _token = token;
+            _token.Register(CancelStream);
             _taskSource = new StreamTaskSource<object>();
             _results = new ConcurrentQueue<object>();
         }
-        
+
+        private void CancelStream()
+        {
+            var exception = new TaskCanceledException();
+            _taskSource.SetException(exception);
+        }
+
         public void Parse(ReadOnlySequence<byte> resultBuffer)
         {
             if (!_parser.TryParse(resultBuffer))
@@ -55,7 +62,7 @@ namespace MigoLib
             {
                 return false;
             }
-            
+
             await new ValueTask(_taskSource, _nextToken)
                 .ConfigureAwait(false);
 
