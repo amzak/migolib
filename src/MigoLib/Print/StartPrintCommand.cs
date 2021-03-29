@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -5,7 +6,7 @@ namespace MigoLib.Print
 {
     public class StartPrintCommand : Command
     {
-        private string _fileName;
+        private readonly string _fileName;
 
         public StartPrintCommand(string fileName)
         {
@@ -14,8 +15,8 @@ namespace MigoLib.Print
         
         public override Task Write(BinaryWriter writer)
         {
-            writer.Write("startprint;fn:");
-            writer.Write(_fileName);
+            writer.Write("startprint;fn:".AsSpan());
+            writer.Write(_fileName.AsSpan());
             writer.Write(';');
             
             return Task.CompletedTask;

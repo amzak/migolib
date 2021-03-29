@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -7,7 +8,7 @@ namespace MigoLib.Print
     {
         public override Task Write(BinaryWriter writer)
         {
-            writer.Write("stop");
+            writer.Write("stop".AsSpan());
             writer.Write(';');
             
             return Task.CompletedTask;
