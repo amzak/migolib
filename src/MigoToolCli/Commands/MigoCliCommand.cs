@@ -49,6 +49,8 @@ namespace MigoToolCli.Commands
     
     public abstract class MigoCliCommand<T> : Command
     {
+        protected ParseResult CurrentParseResult;
+
         protected MigoCliCommand(string name, string description)
             : base(name, description)
         {
@@ -58,6 +60,8 @@ namespace MigoToolCli.Commands
 
         private async Task<int> HandleInternal(ParseResult parseResult, T parameter)
         {
+            CurrentParseResult = parseResult;
+            
             var endpoint = parseResult.RootCommandResult
                 .OptionResult("--endpoint")?
                 .GetValueOrDefault<MigoEndpoint>();
