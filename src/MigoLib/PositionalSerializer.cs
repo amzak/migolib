@@ -171,5 +171,69 @@ namespace MigoLib
             _delimiter = delimiter;
             return this;
         }
+
+        public PositionalSerializer<T> Switch<TProperty>(
+            (string marker, Expression<Func<T, TProperty>> accessor, TProperty value) switch1,
+            (string marker, Expression<Func<T, TProperty>> accessor, TProperty value) switch2)
+        {
+            ParameterExpression model = Expression.Parameter(typeof(T), "model");
+            ParameterExpression lexem = Expression.Parameter(typeof(ReadOnlySpan<char>), "lexem");
+           
+            var parameters = new[] {lexem, model};
+
+            var block = Expression.Block(
+                CompileSwitch(model, lexem, switch1),
+                CompileSwitch(model, lexem, switch2)
+            );
+            
+            var blockCall = Expression
+                .Lambda<ReadOnlySpanAction<char, T>>(block,parameters);
+
+            var blockCallCompiled = blockCall.Compile();
+            
+            _fieldParsers.Add(blockCallCompiled);
+            return this;
+        }
+
+        private ConditionalExpression CompileSwitch<TProperty>(
+            ParameterExpression model,
+            ParameterExpression lexem,
+            (string marker, Expression<Func<T, TProperty>> accessor, TProperty value) switchCase)
+        {
+            var accessorBody = (MemberExpression) switchCase.accessor.Body;
+            var propertyToSet = (PropertyInfo) accessorBody.Member;
+            var setMethod = propertyToSet.GetSetMethod();
+
+            var marker = Expression.Constant(switchCase.marker);
+            var valueToSet = Expression.Constant(switchCase.value);
+            var comparisonMethod = Expression.Constant(StringComparison.Ordinal);
+            
+            var asSpan = typeof(MemoryExtensions)
+                .GetMethod(
+                    "AsSpan",
+                    new [] {typeof(string)});
+
+            var spanEquals = typeof(MemoryExtensions)
+                .GetMethod(
+                    "Equals",
+                    new []
+                    {
+                        typeof(ReadOnlySpan<char>), 
+                        typeof(ReadOnlySpan<char>),
+                        typeof(StringComparison)
+                    });
+
+            var markerAsSpan = Expression.Call(asSpan, marker);
+
+            var equalityTest = Expression.Call(spanEquals, 
+                lexem, 
+                markerAsSpan,
+                comparisonMethod);
+            var block = Expression.Call(model, setMethod, valueToSet);
+
+            var conditionalExpression = Expression.IfThen(equalityTest, block);
+
+            return conditionalExpression;
+        }
     }
 }

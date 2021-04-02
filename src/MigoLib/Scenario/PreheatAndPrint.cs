@@ -27,21 +27,41 @@ namespace MigoLib.Scenario
             _logger.LogInformation($"Executing scenario {nameof(PreheatAndPrint)}");
             if (_preheat.HasValue)
             {
-                _logger.LogInformation($"Preheating bed to  {_preheat.Value.ToString("F0")}");
+                var preheat = _preheat.Value;
+                _logger.LogInformation($"Preheating bed to {preheat.ToString("F0")}...");
 
-                await SetBedTemperature(_preheat.Value)
+                await SetBedTemperature(preheat)
                     .ConfigureAwait(false);
 
                 CancellationCheck(token);
                 
                 var cts = new CancellationTokenSource();
+
+                double lastReportedTemperature = 0.0;
+                double reportThreshold = 30;
                 
                 await foreach (var state in _migo.GetStateStream(cts.Token))
                 {
                     CancellationCheck(token);
-                    if (state.BedTemp > _preheat.Value - Tolerance)
+                    
+                    double temperature = state.BedTemp;
+                    if (state.BedTemp > preheat - Tolerance)
                     {
                         cts.Cancel();
+                    }
+
+                    if (temperature - lastReportedTemperature < reportThreshold)
+                    {
+                        continue;
+                    }
+
+                    double target = preheat - Tolerance;
+                    _logger.LogInformation($"{temperature.ToString("F0")} of {target.ToString("F0")}");
+                    lastReportedTemperature = temperature;
+
+                    if (temperature > 100)
+                    {
+                        reportThreshold = 5;
                     }
                 }
 

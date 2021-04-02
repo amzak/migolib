@@ -5,7 +5,10 @@ namespace MigoLib.Print
         protected override void Setup(PositionalSerializer<StartPrintResult> serializer)
         {
             serializer
-                .FixedString("printstartsuccess")
+                .Switch(
+                    ("printstartsuccess", x => x.Success, true), 
+                    ("printstartfailed", x => x.Success, false)
+                )
                 .Skip(1); // skip "fn:(.*)***.gcode"
         }
     }

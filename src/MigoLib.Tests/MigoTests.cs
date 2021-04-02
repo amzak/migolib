@@ -180,9 +180,24 @@ namespace MigoLib.Tests
             var result = await _migo.StartPrint(GCodeFile)
                 .ConfigureAwait(false);
 
+            result.PrintStarted.Should().BeTrue();
             result.Success.Should().BeTrue();
         }
         
+        [Test]
+        public async Task Should_fail_to_start_printing()
+        {
+            _fakeMigo
+                .ReplyMode(FakeMigoMode.RequestReply)
+                .ReplyPrintFailed(_gCodeFileName);
+
+            var result = await _migo.StartPrint(GCodeFile)
+                .ConfigureAwait(false);
+
+            result.PrintStarted.Should().BeFalse();
+            result.Success.Should().BeTrue();
+        }
+
         [Test]
         public async Task Should_stop_print_successfully()
         {

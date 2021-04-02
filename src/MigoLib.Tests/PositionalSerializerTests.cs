@@ -1,5 +1,8 @@
+using System;
+using System.Text;
 using FluentAssertions;
 using MigoLib.FileUpload;
+using MigoLib.Print;
 using MigoLib.State;
 using NUnit.Framework;
 
@@ -55,6 +58,23 @@ namespace MigoLib.Tests
             _ = serializer.Parse(StateInput);
 
             serializer.IsError.Should().Be(expected);
+        }
+
+        [Test]
+        [TestCase("printstartsuccess;fn:3DBenchy.gcode", true)]
+        [TestCase("printstartfailed;fn:3DBenchy.gcode", false)]
+        public void Should_parse_two_variants_of_migo_response(string incoming, bool expected)
+        {
+            var serializer = new PositionalSerializer<StartPrintResult>(';')
+                .Switch(
+                    ("printstartsuccess", x => x.PrintStarted, true), 
+                    ("printstartfailed", x => x.PrintStarted, false)
+                )
+                .Skip(1); // skip "fn:(.*)***.gcode";
+
+            var result = serializer.Parse(incoming);
+
+            result.PrintStarted.Should().Be(expected);
         }
     }
 }
