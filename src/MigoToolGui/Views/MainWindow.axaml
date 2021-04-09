@@ -131,65 +131,64 @@
         
         <TabControl>
             <TabItem Header="Print job" >
-                <Border 
-                    BorderThickness="1" 
-                    BorderBrush="Gray"
-                    Padding="10">
-                    <StackPanel Orientation="Vertical" Margin="0, 5">
-                        <StackPanel Orientation="Horizontal">
-                            <Button
-                                Width="150" 
-                                Margin="0,0,0,0"
-                                HorizontalContentAlignment="Center"
-                                Tag="browse"
-                                Command="{Binding Source={StaticResource OpenFileDialog}, Path=ShowDialog}">
-                                Browse...
-                            </Button>
-                            <TextBlock 
-                                VerticalAlignment="Stretch"
-                                Margin="5,5,0,0">
-                                GCode file
-                            </TextBlock>
-                            <TextBlock 
-                                VerticalAlignment="Stretch"
-                                Margin="5,5,0,0"
-                                Text="{Binding GcodeFileName}"></TextBlock>
-                        </StackPanel>
+                <StackPanel Orientation="Vertical" Margin="0, 5">
+                    <StackPanel Orientation="Horizontal">
+                        <Button
+                            Width="150" 
+                            Margin="0,0,0,0"
+                            HorizontalContentAlignment="Center"
+                            Tag="browse"
+                            Command="{Binding Source={StaticResource OpenFileDialog}, Path=ShowDialog}">
+                            Browse...
+                        </Button>
+                        <TextBlock 
+                            VerticalAlignment="Stretch"
+                            Margin="5,5,0,0">
+                            GCode file
+                        </TextBlock>
+                        <TextBlock 
+                            VerticalAlignment="Stretch"
+                            Margin="5,5,0,0"
+                            Text="{Binding GcodeFileName}"></TextBlock>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                        <Button
+                            Width="150"
+                            IsEnabled="True"
+                            HorizontalContentAlignment="Center"
+                            Tag="start_print"
+                            Command="{Binding StartPrintCommand}">
+                            Start print
+                        </Button>
+                        <CheckBox 
+                            Margin="5,0"
+                            IsChecked="{Binding PreheatEnabled}">Preheat bed</CheckBox>
+                        <NumericUpDown 
+                            Margin="5,0"
+                            Minimum="40"
+                            Maximum="150"
+                            Increment="1"
+                            VerticalAlignment="Stretch"
+                            Value="{Binding PreheatTemperature}">
+                        </NumericUpDown>
                         <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                            <Button
-                                Width="150"
-                                IsEnabled="True"
-                                HorizontalContentAlignment="Center"
-                                Tag="start_print"
-                                Command="{Binding StartPrintCommand}">
-                                Start print
-                            </Button>
-                            <CheckBox 
-                                Margin="5,0"
-                                IsChecked="{Binding PreheatEnabled}">Preheat bed</CheckBox>
-                            <NumericUpDown 
-                                Margin="5,0"
-                                Minimum="40"
-                                Maximum="150"
-                                Increment="1"
-                                VerticalAlignment="Stretch"
-                                Value="{Binding PreheatTemperature}"></NumericUpDown>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                            <Button
-                                Width="150" 
-                                HorizontalContentAlignment="Center"
-                                Command="{Binding StopPrintCommand}">
-                                Stop
-                            </Button>
+                            <ProgressBar Maximum="100" Minimum="0" Value="{Binding ProgressStatus}" />
                         </StackPanel>
                     </StackPanel>
-                </Border>
+                    <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                        <Button
+                            Width="150" 
+                            HorizontalContentAlignment="Center"
+                            Command="{Binding StopPrintCommand}">
+                            Stop
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
             </TabItem>
             <TabItem Header="Manual control">
                 <StackPanel Orientation="Vertical">
                     <Button>Home XYZ</Button>
-                    <Grid>
+                    <Grid Width="200" HorizontalAlignment="Left">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition />
                             <ColumnDefinition />
@@ -212,6 +211,13 @@
             </TabItem>
             <TabItem Header="Z offset calibration">
                 <StackPanel Orientation="Horizontal">
+                    <Button
+                        Command="{Binding SetZOffsetCommand}"
+                        CommandParameter="{Binding ZOffset}"
+                        Width="150" 
+                        Margin="5,0" 
+                        VerticalAlignment="Stretch"
+                        HorizontalContentAlignment="Center">Set</Button>
                     <TextBlock 
                         VerticalAlignment="Stretch"
                         Margin="0,5,0,0">Z offset</TextBlock>
@@ -223,13 +229,6 @@
                         FormatString="0.00"
                         VerticalAlignment="Stretch"
                         Value="{Binding ZOffset}"></NumericUpDown>
-                    <Button
-                        Command="{Binding SetZOffsetCommand}"
-                        CommandParameter="{Binding ZOffset}"
-                        Width="150" 
-                        Margin="5,0" 
-                        VerticalAlignment="Stretch"
-                        HorizontalContentAlignment="Center">Apply</Button>
                 </StackPanel>
             </TabItem>
         </TabControl>

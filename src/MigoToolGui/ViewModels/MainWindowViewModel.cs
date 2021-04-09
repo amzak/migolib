@@ -51,6 +51,9 @@ namespace MigoToolGui.ViewModels
         [Reactive]
         public double PreheatTemperature { get; set; }
 
+        [Reactive]
+        public byte ProgressStatus { get; set; }
+
         public MainWindowViewModel(MigoProxyService migoProxyService)
         {
             _startedAt = DateTime.Now;
@@ -58,6 +61,7 @@ namespace MigoToolGui.ViewModels
             _migoProxyService = migoProxyService;
 
             PreheatEnabled = true;
+            PreheatTemperature = 100;
             GcodeFileName = string.Empty;
     
             Activator = new ViewModelActivator();
@@ -82,7 +86,7 @@ namespace MigoToolGui.ViewModels
 
         private async Task StartPrint()
         {
-            await _migoProxyService.StartPrint(GcodeFileName);
+            await _migoProxyService.PreheatAndPrint(GcodeFileName, PreheatTemperature);
         }
 
         private Task StopPrint() 
@@ -109,6 +113,14 @@ namespace MigoToolGui.ViewModels
                     var bedPoint = new TemperaturePoint(DateTime.Now.Subtract(_startedAt), state.BedTemp);
                     NozzleTValues.Add(nozzlePoint);
                     BedTValues.Add(bedPoint);
+                });
+            
+            _migoProxyService.GetProgressStream(_cancellationTokenSource.Token)
+                .ToObservable()
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(percent =>
+                {
+                    ProgressStatus = percent.Percent;
                 });
 
             Observable.StartAsync(_migoProxyService.GetZOffset, RxApp.TaskpoolScheduler)
