@@ -6,7 +6,6 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using MigoLib.ZOffset;
 using MigoToolGui.Domain;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
@@ -22,30 +21,15 @@ namespace MigoToolGui.ViewModels
         private readonly MigoProxyService _migoProxyService;
         private readonly CancellationTokenSource _cancellationTokenSource;
 
-        private double _nozzleT;
+        [Reactive]
+        public double NozzleT { get; set; }
 
-        public double NozzleT
-        {
-            get => _nozzleT;
-            set => this.RaiseAndSetIfChanged(ref _nozzleT, value);
-        }
+        [Reactive]
+        public double BedT { get; set; }
+
+        [Reactive]
+        public double ZOffset { get; set; }
         
-        private double _bedT;
-
-        public double BedT
-        {
-            get => _bedT;
-            set => this.RaiseAndSetIfChanged(ref _bedT, value);
-        }
-        
-        private double _zOffset;
-
-        public double ZOffset
-        {
-            get => _zOffset;
-            set => this.RaiseAndSetIfChanged(ref _zOffset, value);
-        }
-
         [Reactive]
         public string GcodeFileName { get; set; }
 
@@ -61,29 +45,19 @@ namespace MigoToolGui.ViewModels
         
         public ObservableCollection<TemperaturePoint> BedTValues { get; set; }
 
-        private bool _preheatEnabled;
-
-        public bool PreheatEnabled
-        {
-            get => _preheatEnabled;
-            set => this.RaiseAndSetIfChanged(ref _preheatEnabled, value);
-        }
-
-        private double _preheatTemperature;
-
-        public double PreheatTemperature
-        {
-            get => _preheatTemperature;
-            set => this.RaiseAndSetIfChanged(ref _preheatTemperature, value);
-        }
+        [Reactive]
+        public bool PreheatEnabled { get; set; }
+        
+        [Reactive]
+        public double PreheatTemperature { get; set; }
 
         public MainWindowViewModel(MigoProxyService migoProxyService)
         {
             _startedAt = DateTime.Now;
-            _preheatEnabled = true;
             _cancellationTokenSource = new CancellationTokenSource();
             _migoProxyService = migoProxyService;
 
+            PreheatEnabled = true;
             GcodeFileName = string.Empty;
     
             Activator = new ViewModelActivator();
@@ -105,11 +79,6 @@ namespace MigoToolGui.ViewModels
 
             this.WhenActivated(OnActivated);
         }
-
-        private Task<ZOffsetModel> Execute(double offset)
-        {
-            return _migoProxyService.SetZOffset(offset);
-        }   
 
         private async Task StartPrint()
         {
