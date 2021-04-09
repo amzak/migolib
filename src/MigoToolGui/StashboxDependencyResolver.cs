@@ -23,16 +23,14 @@ namespace MigoToolGui
                 {
                     if (string.IsNullOrEmpty(contract))
                     {
-                        configurator
-                            .WithFactory(factory)
-                            .ReplaceExisting();
+                        configurator.WithInstance(factory())
+                            .AsImplementedTypes();
                     }
                     else
                     {
-                        configurator
-                            .WithFactory(factory)
+                        configurator.WithInstance(factory())
                             .WithName(contract)
-                            .ReplaceExisting();
+                            .AsImplementedTypes();
                     }
                 });
         }

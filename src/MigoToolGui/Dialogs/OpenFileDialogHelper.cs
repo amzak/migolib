@@ -24,8 +24,18 @@ namespace MigoToolGui.Dialogs
         public ReactiveCommand<Unit, Unit> ShowDialog { get; private set; }
         
         public static readonly DirectProperty<OpenFileDialogHelper, ICommand> CommandProperty =
-            AvaloniaProperty.RegisterDirect<OpenFileDialogHelper, ICommand>(nameof(Command),
-                button => button.Command, (button, command) => button.Command = command, enableDataValidation: true);
+            AvaloniaProperty.RegisterDirect<OpenFileDialogHelper, ICommand>(
+                nameof(Command),
+                dialogHelper => dialogHelper.Command, 
+                (dialogHelper, command) =>
+                {
+                    if (command == default)
+                    {
+                        return;
+                    }
+                    
+                    dialogHelper.Command = command;
+                }, enableDataValidation: true);
         
         private ICommand _fileSelectedCommand;
 
@@ -45,6 +55,8 @@ namespace MigoToolGui.Dialogs
         
         public OpenFileDialogHelper()
         {
+            CommandParameter = new object();
+            _fileSelectedCommand = ReactiveCommand.Create(() => { });
             ShowDialog = ReactiveCommand.CreateFromTask(ShowDialogAction);
         }
 

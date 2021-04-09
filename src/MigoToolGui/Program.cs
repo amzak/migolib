@@ -1,6 +1,6 @@
-﻿using System.Reflection;
-using System.Threading;
+﻿using System.Threading;
 using Avalonia;
+using Avalonia.Logging;
 using Avalonia.ReactiveUI;
 using Microsoft.Extensions.Logging;
 using MigoLib.Tests;
@@ -36,41 +36,37 @@ namespace MigoToolGui
             
             fakeMigo.Start();
             
-            SetupDependencies(container, logger);
-
             var resolver = new StashboxDependencyResolver(container);
             Locator.SetLocator(resolver);
+            SetupDependencies(container, logger);
             
             Locator.CurrentMutable.InitializeSplat();
             Locator.CurrentMutable.InitializeReactiveUI();
-            Locator.CurrentMutable.RegisterViewsForViewModels(Assembly.GetCallingAssembly());
             
             BuildAvaloniaApp(container)
                 .StartWithClassicDesktopLifetime(args);
-            
+
             fakeMigo.Stop();
         }
 
-        public static AppBuilder BuildAvaloniaApp(IStashboxContainer container)
+        private static AppBuilder BuildAvaloniaApp(StashboxContainer container)
         {
-            var app = AppBuilder.Configure<App>()
-                .UseReactiveUI()
+            var app = AppBuilder.Configure(() => new App(container))
                 .UsePlatformDetect()
-                .LogToTrace();
+                .LogToTrace(level: LogEventLevel.Debug)
+                .UseReactiveUI();
             
             return app;
         }
-        
+
         public static void SetupDependencies(IStashboxContainer container, ILogger logger)
         {
             container.RegisterInstance(logger);
             container.Register<ILoggerFactory, SerilogLoggerFactory>();
             container.RegisterSingleton<ConfigProvider>();
-            container.RegisterSingleton<MigoStateService>();
+            container.RegisterSingleton<MigoProxyService>();
 
             container.Register<MainWindowViewModel>();
-            //container.RegisterSingleton<IViewFor<MainWindowViewModel>, MainWindow>();
         }
     }
-
 }

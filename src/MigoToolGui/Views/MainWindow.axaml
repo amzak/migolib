@@ -16,7 +16,9 @@
     </Design.DataContext>
     
     <Window.Resources>
-        <dialogs:OpenFileDialogHelper x:Key="OpenFileDialog" Command="{Binding GCodeFileSelected}"/>
+        <dialogs:OpenFileDialogHelper 
+            x:Key="OpenFileDialog" 
+            Command="{Binding GCodeFileSelected}"/>
     </Window.Resources>
     
     <Window.Styles>
@@ -92,8 +94,6 @@
                 VerticalAlignment="Center"
                 Text="Idle"/>                
         </StackPanel>
-        <!--
-        -->
         <oxy:Plot
             Height="400"
             Margin="0,20"
@@ -137,30 +137,51 @@
                     Padding="10">
                     <StackPanel Orientation="Vertical" Margin="0, 5">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock 
-                                VerticalAlignment="Stretch"
-                                Margin="0,5,0,0">GCode file</TextBlock>
                             <Button
                                 Width="150" 
-                                Margin="5,0"
+                                Margin="0,0,0,0"
                                 HorizontalContentAlignment="Center"
+                                Tag="browse"
                                 Command="{Binding Source={StaticResource OpenFileDialog}, Path=ShowDialog}">
                                 Browse...
                             </Button>
                             <TextBlock 
                                 VerticalAlignment="Stretch"
-                                Margin="0,5,0,0"
+                                Margin="5,5,0,0">
+                                GCode file
+                            </TextBlock>
+                            <TextBlock 
+                                VerticalAlignment="Stretch"
+                                Margin="5,5,0,0"
                                 Text="{Binding GcodeFileName}"></TextBlock>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal">
+                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                            <Button
+                                Width="150"
+                                IsEnabled="True"
+                                HorizontalContentAlignment="Center"
+                                Tag="start_print"
+                                Command="{Binding StartPrintCommand}">
+                                Start print
+                            </Button>
+                            <CheckBox 
+                                Margin="5,0"
+                                IsChecked="{Binding PreheatEnabled}">Preheat bed</CheckBox>
+                            <NumericUpDown 
+                                Margin="5,0"
+                                Minimum="40"
+                                Maximum="150"
+                                Increment="1"
+                                VerticalAlignment="Stretch"
+                                Value="{Binding PreheatTemperature}"></NumericUpDown>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                             <Button
                                 Width="150" 
-                                Margin="5,0"
-                                HorizontalContentAlignment="Center">Start print</Button>
-                            <Button
-                                Width="150" 
-                                Margin="5,0"
-                                HorizontalContentAlignment="Center">Stop</Button>
+                                HorizontalContentAlignment="Center"
+                                Command="{Binding StopPrintCommand}">
+                                Stop
+                            </Button>
                         </StackPanel>
                     </StackPanel>
                 </Border>
