@@ -32,6 +32,8 @@ namespace MigoLib
 
         private Task _socketReadingTask;
 
+        private readonly CancellationTokenSource _lifetimeCts;
+
         public MigoReaderWriter(IPEndPoint endPoint, ILogger<MigoReaderWriter> logger)
         {
             _endPoint = endPoint;
@@ -40,7 +42,9 @@ namespace MigoLib
             _pipe = new Pipe();
             _streams = new ConcurrentBag<StreamedReply>();
             _requestsReplies = new List<RequestReply>();
-            _requestsRepliesLock = new object(); 
+            _requestsRepliesLock = new object();
+
+            _lifetimeCts = new CancellationTokenSource();
 
             Task.Run(Start);
         }
@@ -282,7 +286,11 @@ namespace MigoLib
         public async IAsyncEnumerable<T> GetStream<T>(IResultParser<T> parser, CancellationToken token)
             where T: class
         {
-            var streamedReply = new StreamedReply(parser, token);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(
+                _lifetimeCts.Token, 
+                token);
+            
+            var streamedReply = new StreamedReply(parser, cts.Token);
             _streams.Add(streamedReply);
 
             await EnsureConnection().ConfigureAwait(false);
@@ -292,6 +300,8 @@ namespace MigoLib
             {
                 yield return (T) o;
             }
+            
+            _logger.LogDebug($"stream of {typeof(T)} completed");
         }
 
         public async Task<int> Write(IEnumerable<ReadOnlyMemory<byte>> chunks)
@@ -359,6 +369,8 @@ namespace MigoLib
 
         public void Dispose()
         {
+            _lifetimeCts.Cancel();
+            _lifetimeCts.Dispose();
             _pipe.Writer.Complete();
             _pipe.Reader.Complete();
         }

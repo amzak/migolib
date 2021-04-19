@@ -18,7 +18,9 @@ namespace MigoLib
         public bool IsCompleted()
         {
             var token = _manualResetValueTaskSource.Version;
-            return _manualResetValueTaskSource.GetStatus(token) == ValueTaskSourceStatus.Succeeded;
+            var status = _manualResetValueTaskSource.GetStatus(token);
+            return status is ValueTaskSourceStatus.Succeeded 
+                or ValueTaskSourceStatus.Canceled;
         }
 
         public void SetResult(T result) 

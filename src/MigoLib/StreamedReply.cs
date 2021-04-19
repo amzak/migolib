@@ -26,6 +26,11 @@ namespace MigoLib
 
         private void CancelStream()
         {
+            if (_taskSource.IsCompleted())
+            {
+                return;
+            }
+
             var exception = new TaskCanceledException();
             _taskSource.SetException(exception);
         }
