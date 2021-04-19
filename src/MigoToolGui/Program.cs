@@ -8,6 +8,8 @@ using MigoToolGui.Bootstrap;
 using MigoToolGui.Domain;
 using MigoToolGui.ViewModels;
 using ReactiveUI;
+using ReactiveUI.Validation.Formatters;
+using ReactiveUI.Validation.Formatters.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
 using Splat;
@@ -32,9 +34,13 @@ namespace MigoToolGui
 
             var cancellationTokenSource = new CancellationTokenSource();
             var fakeMigo = new FakeMigo("127.0.0.1", 10086, fakeMigoLogger);
+            var fakeMigo2 = new FakeMigo("127.0.0.1", 10087, fakeMigoLogger);
+            
             fakeMigo.ReplyRealStream(cancellationTokenSource.Token);
+            fakeMigo2.ReplyRealStream(cancellationTokenSource.Token);
             
             fakeMigo.Start();
+            fakeMigo2.Start();
             
             var resolver = new StashboxDependencyResolver(container);
             Locator.SetLocator(resolver);
@@ -47,6 +53,7 @@ namespace MigoToolGui
                 .StartWithClassicDesktopLifetime(args);
 
             fakeMigo.Stop();
+            fakeMigo2.Stop();
         }
 
         private static AppBuilder BuildAvaloniaApp(StashboxContainer container)
@@ -63,6 +70,8 @@ namespace MigoToolGui
         {
             container.RegisterInstance(logger);
             container.Register<ILoggerFactory, SerilogLoggerFactory>();
+            container.Register(typeof(IValidationTextFormatter<>), typeof(SingleLineFormatter));
+            
             container.RegisterSingleton<ConfigProvider>();
             container.RegisterSingleton<MigoProxyService>();
 

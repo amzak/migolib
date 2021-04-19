@@ -17,7 +17,7 @@ namespace MigoToolGui.Domain
     public class MigoProxyService : IDisposable
     {
         private readonly ILoggerFactory _loggerFactory;
-        private readonly Migo _migo;
+        private Migo _migo;
         private readonly CancellationTokenSource _tokenSource;
         private readonly ILogger<MigoProxyService> _logger;
 
@@ -32,10 +32,32 @@ namespace MigoToolGui.Domain
         }
 
         public IAsyncEnumerable<MigoStateModel> GetStateStream(CancellationToken token)
-            => _migo.GetStateStream(token);
+        {
+            try
+            {
+                return _migo.GetStateStream(token);
+            }
+            catch (TaskCanceledException _)
+            {
+                // ignore
+            }
+
+            return default!;
+        }
 
         public IAsyncEnumerable<FilePercentResult> GetProgressStream(CancellationToken token)
-            => _migo.GetProgressStream(token);
+        {
+            try
+            {
+                return _migo.GetProgressStream(token);
+            }
+            catch (TaskCanceledException _)
+            {
+                // ignore
+            }
+
+            return default!;
+        }
 
         public Task<ZOffsetModel> GetZOffset() => _migo.GetZOffset();
         
@@ -59,5 +81,14 @@ namespace MigoToolGui.Domain
 
         public Task<StopPrintResult> StopPrint()
             => _migo.StopPrint();
+
+        public void SwitchTo(MigoEndpoint endpoint)
+        {
+            _logger.LogDebug($"switching to {endpoint}");
+            _migo.Dispose();
+            _logger.LogDebug("old migo connection disposed");
+            _migo = new Migo(_loggerFactory, endpoint);
+            _logger.LogDebug("created new migo connection");
+        }
     }
 }

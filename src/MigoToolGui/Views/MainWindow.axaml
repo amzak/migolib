@@ -5,11 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:oxy="clr-namespace:OxyPlot.Avalonia;assembly=OxyPlot.Avalonia"
         xmlns:dialogs="clr-namespace:MigoToolGui.Dialogs"
-        mc:Ignorable="d" d:DesignWidth="800"
+        mc:Ignorable="d" 
+        d:DesignWidth="800"
         SizeToContent="Height"
         x:Class="MigoToolGui.Views.MainWindow"
         Title="MigoToolGui"
-        Padding="10">
+        Padding="10"
+        WindowStartupLocation="CenterScreen">
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
@@ -42,21 +44,26 @@
                 VerticalAlignment="Center"
                 Text="Connection"/>
             <ComboBox
+                Items="{Binding Endpoints}"
+                SelectedItem="{Binding SelectedEndpoint}"
                 Margin="5, 0, 0,0"
                 Width="150"
                 VerticalAlignment="Center"
-                HorizontalContentAlignment="Right"
-                SelectedIndex="0">
-                <ComboBoxItem>127.0.0.1</ComboBoxItem>
-                <ComboBoxItem>192.168.2.57</ComboBoxItem>
+                HorizontalContentAlignment="Right">
             </ComboBox>
+            <Button
+                Margin="5, 0, 0,0"
+                Command="{Binding ShowEndpointsDialogCommand}">
+                ...
+            </Button>
+        </StackPanel>            
+        <StackPanel Orientation="Horizontal" Margin="0, 10, 0,0">
             <TextBlock
                 Margin="5, 0, 0,0"
                 Width="30"
                 TextAlignment="Right"
                 VerticalAlignment="Center"
                 Text="OK"/>
-
             <TextBlock
                 Foreground="Gray"
                 Margin="20, 0, 0,0"

@@ -18,6 +18,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
     <PackageReference Include="OxyPlot.Avalonia" Version="2.1.0-20201211.2" />
     <PackageReference Include="ReactiveUI.Fody" Version="13.2.10" />
+    <PackageReference Include="ReactiveUI.Validation" Version="2.1.1" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="Stashbox" Version="3.5.0" />
@@ -26,5 +27,11 @@
   <ItemGroup>
     <ProjectReference Include="..\MigoLib.Tests\MigoLib.Tests.csproj" />
     <ProjectReference Include="..\MigoLib\MigoLib.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Views\EndpointsDialog.axaml.cs">
+      <DependentUpon>ConnectionsDialog.axaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
 </Project>
