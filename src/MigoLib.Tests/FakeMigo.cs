@@ -77,16 +77,8 @@ namespace MigoLib.Tests
                 while (!_tokenSource.IsCancellationRequested)
                 {
                     _log.LogInformation("accepting new clients...");
-                    using (var tcpClient = await _tcpListener.AcceptTcpClientAsync().ConfigureAwait(false))
-                    {
-                        var clientIp = ((IPEndPoint) tcpClient.Client.RemoteEndPoint)?.Address.ToString();
-                        _log.LogInformation($"accepted client from {clientIp}");
-
-                        await HandleClient(tcpClient)
-                            .ConfigureAwait(false);
-                    
-                        _log.LogInformation($"client from {clientIp} disconnected");
-                    }
+                    using var tcpClient = await _tcpListener.AcceptTcpClientAsync().ConfigureAwait(false);
+                    await HandleClient(tcpClient).ConfigureAwait(false);
                 }
             }
             finally
@@ -122,17 +114,26 @@ namespace MigoLib.Tests
                         .ConfigureAwait(false);
                     break;
             }
+
+            _log.LogInformation($"handling of client {tcpClient.Client.LocalEndPoint} completed.");
         }
 
         private async Task HandleReplyRealStream(NetworkStream stream)
         {
-            while (!_streamCancellationToken.IsCancellationRequested || !_tokenSource.IsCancellationRequested)
+            try
             {
-                await WriteReply(stream, FakeReplies.RandomState)
-                    .ConfigureAwait(false);
+                while (!_streamCancellationToken.IsCancellationRequested || !_tokenSource.IsCancellationRequested)
+                {
+                    await WriteReply(stream, FakeReplies.RandomState)
+                        .ConfigureAwait(false);
 
-                await Task.Delay(1000, _streamCancellationToken)
-                    .ConfigureAwait(false);
+                    await Task.Delay(1000, _streamCancellationToken)
+                        .ConfigureAwait(false);
+                }
+            }
+            catch (IOException ex)
+            {
+                _log.LogError(ex, "error");
             }
         }
 
@@ -184,9 +185,12 @@ namespace MigoLib.Tests
 
         private async Task WriteReply(NetworkStream stream, string reply)
         {
+            var endPoint = stream.Socket.LocalEndPoint;
             var bytes = Encoding.UTF8.GetBytes(reply);
+
+            _log.LogInformation($"sending {reply} to {endPoint}...");
             await stream.WriteAsync(bytes).ConfigureAwait(false);
-            _log.LogInformation($"sent {reply}");
+            _log.LogInformation($"sent {reply} to {endPoint}");
         }
 
         private Task HandleImmediateReply(NetworkStream stream) => WriteReply(stream, _fixedReply);
