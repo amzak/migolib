@@ -32,7 +32,8 @@ namespace MigoLib
 
         private Task _socketReadingTask;
 
-        private readonly SemaphoreSlim _semaphore;
+        private readonly SemaphoreSlim _socketReadSemaphore;
+        private readonly SemaphoreSlim _connectionCheckSemaphore;
         private readonly CancellationTokenSource _lifetimeCts;
 
         public MigoReaderWriter(IPEndPoint endPoint, ILogger<MigoReaderWriter> logger)
@@ -45,7 +46,8 @@ namespace MigoLib
             _requestsReplies = new List<RequestReply>();
             _requestsRepliesLock = new object();
 
-            _semaphore = new SemaphoreSlim(1, 1);
+            _socketReadSemaphore = new SemaphoreSlim(1, 1);
+            _connectionCheckSemaphore = new SemaphoreSlim(1, 1);
             _lifetimeCts = new CancellationTokenSource();
 
             Task.Run(Start);
@@ -54,85 +56,99 @@ namespace MigoLib
         private async Task Start()
         {
             _logger.LogDebug($"started... {_endPoint}");
-            
+
             await ReadPipeAsync()
                 .ConfigureAwait(false);
-
+            
             _logger.LogDebug("completed");
         }
 
         private async Task EnsureConnection()
         {
-            if (_socket != default && _socket.Connected)
+            try
             {
-                var isConnected = !(_socket.Poll(1, SelectMode.SelectRead)
-                                    && _socket.Available == 0);
+                await _connectionCheckSemaphore.WaitAsync().ConfigureAwait(false);
 
-                if (!isConnected)
+                _logger.LogInformation("EnsureConnection()");
+                _logger.LogInformation(Environment.StackTrace);
+                if (_socket != default && _socket.Connected)
+                {
+                    _logger.LogInformation($"ensuring connection... {_socket.RemoteEndPoint}");
+
+                    var isConnected = !(_socket.Poll(1, SelectMode.SelectRead)
+                                        && _socket.Available == 0);
+
+                    if (!isConnected)
+                    {
+                        await Connect().ConfigureAwait(false);
+                    }
+                }
+                else
                 {
                     await Connect().ConfigureAwait(false);
-                    _logger.LogDebug("socket connection established");
                 }
-            }
-            else
-            {
-                await Connect().ConfigureAwait(false);
-                _logger.LogDebug("socket connection established");
-            }
 
-            _logger.LogDebug("socket connection ok");
+                _logger.LogDebug("socket connection ok");
+            }
+            finally
+            {
+                _connectionCheckSemaphore.Release();
+            }
         }
         
         private Task Connect()
         {
-            if (_socket != default)
+            try
             {
-                _socket.Disconnect(true);
+                if (_socket != default)
+                {
+                    _socket.Disconnect(true);
+                }
+                else
+                {
+                    _socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                }
+                
+                _logger.LogDebug($"connecting new socket... {_endPoint}");
+                return _socket.ConnectAsync(_endPoint);
             }
-            else
+            finally
             {
-                _socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                _logger.LogDebug($"new socket connect completed, IsConnected = {_socket.Connected}");
             }
-            return _socket.ConnectAsync(_endPoint);
         }
 
         private async Task ReadSocketAsync()
         {
-            _logger.LogDebug("started socket reader...");
+            _logger.LogDebug($"started socket reader... {_socket.RemoteEndPoint}");
 
-            FlushResult result = default;
-            try
+            while (true)
             {
-                while (true)
+                _buffer = _pipe.Writer.GetMemory(BufferSize);
+                var arraySegment = GetArray(_buffer);
+
+                _logger.LogDebug($"reading from socket...{_socket.RemoteEndPoint}");
+
+                int bytesRead = await _socket.ReceiveAsync(arraySegment, SocketFlags.None)
+                    .ConfigureAwait(false);
+
+                if (bytesRead == 0)
                 {
-                    _buffer = _pipe.Writer.GetMemory(BufferSize);
-                    var arraySegment = GetArray(_buffer);
-
-                    _logger.LogDebug($"reading from socket...{_socket.RemoteEndPoint}");
-                    var bytesRead = await _socket.ReceiveAsync(arraySegment, SocketFlags.None, _lifetimeCts.Token)
-                        .ConfigureAwait(false);
-                    if (bytesRead == 0)
-                    {
-                        _logger.LogDebug("socket returned zero bytes");
-                        break;
-                    }
-
-                    _logger.LogDebug("socket reader received {bytesRead} bytes", bytesRead.ToString());
-                    
-                    _pipe.Writer.Advance(bytesRead);
-                    
-                    await _pipe.Writer.FlushAsync()
-                        .ConfigureAwait(false);
+                    _logger.LogDebug("socket returned zero bytes");
+                    break;
                 }
-                
-                _socket.Close();
+
+                _logger.LogDebug("socket reader received {bytesRead} bytes", bytesRead.ToString());
+
+                _pipe.Writer.Advance(bytesRead);
+
+                await _pipe.Writer.FlushAsync()
+                    .ConfigureAwait(false);
             }
-            catch (OperationCanceledException _)
-            {
-                // nop
-            }
-            
-            _logger.LogDebug("socket reader completed");
+
+            _socket.Close();
+
+            _logger.LogDebug($"socket reader completed {_socket.RemoteEndPoint}");
         }
 
         private async Task ReadPipeAsync()
@@ -146,6 +162,7 @@ namespace MigoLib
             do
             {
                 _logger.LogDebug($"reading from pipe...");
+
                 result = await reader.ReadAsync(_lifetimeCts.Token)
                     .ConfigureAwait(false);
                 ReadOnlySequence<byte> buffer = result.Buffer;
@@ -256,7 +273,7 @@ namespace MigoLib
             var requestReply = RequestReply(parser);
 
             await EnsureConnection().ConfigureAwait(false);
-            EnsureSocketReading();
+            await EnsureSocketReading().ConfigureAwait(false);
             
             var result = await requestReply.ConfigureAwait(false);
 
@@ -267,7 +284,7 @@ namespace MigoLib
         {
             _logger.LogDebug("EnsureSocketReading()");
 
-            await _semaphore.WaitAsync().ConfigureAwait(false);
+            await _socketReadSemaphore.WaitAsync().ConfigureAwait(false);
 
             try
             {
@@ -282,13 +299,31 @@ namespace MigoLib
                     throw new InvalidOperationException("Should not be here");
                 }
             
-                _socketReadingTask = ReadSocketAsync();
+                _socketReadingTask = ReadSocketAsyncSafe();
                 Task.Run(() => _socketReadingTask);
                 _logger.LogDebug("run ReadSocketAsync()");
             }
             finally
             {
-                _semaphore.Release();
+                _socketReadSemaphore.Release();
+            }
+        }
+
+        private async Task ReadSocketAsyncSafe()
+        {
+            try
+            {
+                await ReadSocketAsync().ConfigureAwait(false);
+            }
+            catch (SocketException ex)
+            {
+                if (ex.NativeErrorCode == 125) // operationAborted
+                {
+                    _logger.LogDebug("socket reading stopped because operation aborted");
+                    return;
+                }
+                        
+                throw;
             }
         }
 
@@ -401,7 +436,8 @@ namespace MigoLib
 
             _socket.Dispose();
             _lifetimeCts.Dispose();
-            _semaphore.Dispose();
+            _socketReadSemaphore.Dispose();
+            _connectionCheckSemaphore.Dispose();
         }
     }
 }

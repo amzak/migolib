@@ -15,9 +15,6 @@ namespace MigoLib
 {
     public class Migo : IDisposable
     {
-        private bool _isConnected;
-        private IPEndPoint _endPoint;
-        
         private readonly ILogger<Migo> _logger;
         private readonly MigoReaderWriter _readerWriter;
 
@@ -27,9 +24,9 @@ namespace MigoLib
             var rwLogger = loggerFactory.CreateLogger<MigoReaderWriter>();
 
             var (ip, port) = endpoint;
-            _endPoint = new IPEndPoint(ip, port);
+            var endPoint = new IPEndPoint(ip, port);
             
-            _readerWriter = new MigoReaderWriter(_endPoint, rwLogger);
+            _readerWriter = new MigoReaderWriter(endPoint, rwLogger);
         }
 
         public async Task<ZOffsetModel> SetZOffset(double zOffset)
@@ -175,7 +172,7 @@ namespace MigoLib
         
         public void Dispose()
         {
-            _readerWriter?.Dispose();
+            _readerWriter.Dispose();
         }
     }
 }
