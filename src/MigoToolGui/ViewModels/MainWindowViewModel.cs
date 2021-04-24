@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
@@ -20,6 +21,7 @@ namespace MigoToolGui.ViewModels
         private readonly DateTime _startedAt;
         
         private readonly MigoProxyService _migoProxyService;
+        private readonly ConfigProvider _configProvider;
         private readonly CancellationTokenSource _cancellationTokenSource;
 
         [Reactive]
@@ -34,7 +36,7 @@ namespace MigoToolGui.ViewModels
         [Reactive]
         public string GcodeFileName { get; set; }
 
-        public ReactiveCommand<double, Unit> SetZOffsetCommand { get; }
+        public ReactiveCommand<double, Unit> SetZOffsetCommand { get; set; }
         
         public ReactiveCommand<string, Unit> GCodeFileSelected { get; set; }
 
@@ -62,43 +64,28 @@ namespace MigoToolGui.ViewModels
 
         public Interaction<EndpointsDialogViewModel, EndpointsListModel> ShowEndpointsDialog { get; }
         
-        public ReactiveCommand<Unit, Unit> ShowEndpointsDialogCommand { get; }
+        public ReactiveCommand<Unit, Unit> ShowEndpointsDialogCommand { get; set;}
         
-        public MainWindowViewModel(MigoProxyService migoProxyService)
+        public MainWindowViewModel(MigoProxyService migoProxyService, ConfigProvider configProvider)
         {
+            Activator = new ViewModelActivator();
+
             _startedAt = DateTime.Now;
             _cancellationTokenSource = new CancellationTokenSource();
             _migoProxyService = migoProxyService;
-
-            Endpoints = new ObservableCollection<MigoEndpoint>();
-
+            _configProvider = configProvider;
+            
             PreheatEnabled = true;
             PreheatTemperature = 100;
             GcodeFileName = string.Empty;
-    
-            Activator = new ViewModelActivator();
+
+            Endpoints = new ObservableCollection<MigoEndpoint>();
             NozzleTValues = new ObservableCollection<TemperaturePoint>();
             BedTValues = new ObservableCollection<TemperaturePoint>();
-
-            SetZOffsetCommand = ReactiveCommand.CreateFromTask(
-                (Func<double, Task>)SetZOffset);
-            
-            GCodeFileSelected = ReactiveCommand.Create<string>(OnGCodeFileSelected);
-
-            var canStartPrint = this
-                .WhenAnyValue(model => model.GcodeFileName)
-                .Select(x => !string.IsNullOrEmpty(x))
-                .ObserveOn(RxApp.MainThreadScheduler);
-            
-            StartPrintCommand = ReactiveCommand.CreateFromTask(StartPrint, canStartPrint);
-            StopPrintCommand = ReactiveCommand.CreateFromTask(StopPrint);
 
             ShowEndpointsDialog = new Interaction<EndpointsDialogViewModel, EndpointsListModel>();
             ShowEndpointsDialogCommand = ReactiveCommand.CreateFromTask(OnShowEndpointsDialog);
 
-            this.WhenAnyValue(model => model.SelectedEndpoint)
-                .Subscribe(OnSelectedEndpointChanged);
-            
             this.WhenActivated(OnActivated);
         }
 
@@ -110,22 +97,50 @@ namespace MigoToolGui.ViewModels
             }
             _migoProxyService.SwitchTo(endpoint);
             
-            SubscribeOnStateStream();
-            SubscribeOnProgressStream();
+            StartupObservables();
         }
 
         private async Task<Unit> OnShowEndpointsDialog()
         {
-            var modelIn = new EndpointsDialogViewModel();
+            var sourceConfig = await _configProvider.GetConfig().ConfigureAwait(false);
+            var modelIn = new EndpointsDialogViewModel(sourceConfig.Endpoints);
             var modelOut = await ShowEndpointsDialog.Handle(modelIn);
 
-            Endpoints.Clear();
-            foreach (var endpoint in modelOut.Endpoints)
+            if (modelOut == null)
             {
+                return Unit.Default;
+            }
+            
+            PopulateEndpoints(modelOut.Endpoints);
+
+            var config = new Config(SelectedEndpoint, modelOut.Endpoints);
+            
+            await _configProvider.SaveConfig(config).ConfigureAwait(false);
+            
+            return Unit.Default;
+        }
+
+        private void PopulateEndpoints(IReadOnlyCollection<MigoEndpoint> endpoints)
+        {
+            var selected = SelectedEndpoint;
+            
+            Endpoints.Clear();
+
+            if (selected.IsValid())
+            {
+                Endpoints.Add(selected);
+            }
+            
+            foreach (var endpoint in endpoints)
+            {
+                if(endpoint.Equals(selected))
+                {
+                    continue;
+                }
                 Endpoints.Add(endpoint);
             }
             
-            return Unit.Default;
+            SelectedEndpoint = selected;
         }
 
         private async Task StartPrint() 
@@ -144,15 +159,44 @@ namespace MigoToolGui.ViewModels
 
         private void OnActivated(CompositeDisposable disposable)
         {
+            Disposable.Create(_cancellationTokenSource, source => { source.Cancel(); })
+                .DisposeWith(disposable);
+
+            Observable.StartAsync(_configProvider.GetConfig, RxApp.TaskpoolScheduler)
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(InitConfig);
+
+            this.WhenAnyValue(model => model.SelectedEndpoint)
+                .Subscribe(OnSelectedEndpointChanged);
+            
+            SetZOffsetCommand = ReactiveCommand.CreateFromTask(
+                (Func<double, Task>)SetZOffset);
+            
+            GCodeFileSelected = ReactiveCommand.Create<string>(OnGCodeFileSelected);
+
+            var canStartPrint = this
+                .WhenAnyValue(model => model.GcodeFileName)
+                .Select(x => !string.IsNullOrEmpty(x))
+                .ObserveOn(RxApp.MainThreadScheduler);
+            
+            StartPrintCommand = ReactiveCommand.CreateFromTask(StartPrint, canStartPrint);
+            StopPrintCommand = ReactiveCommand.CreateFromTask(StopPrint);
+        }
+
+        private void InitConfig(Config config)
+        {
+            PopulateEndpoints(config.Endpoints);
+            SelectedEndpoint = config.SelectedEndpoint;
+        }
+
+        private void StartupObservables()
+        {
             SubscribeOnStateStream();
             SubscribeOnProgressStream();
 
             Observable.StartAsync(_migoProxyService.GetZOffset, RxApp.TaskpoolScheduler)
                 .ObserveOn(RxApp.MainThreadScheduler)
                 .Subscribe(model => InitialZOffsetValue(model.ZOffset));
-
-            Disposable.Create(_cancellationTokenSource, source => { source.Cancel(); })
-                .DisposeWith(disposable);
         }
 
         private void SubscribeOnProgressStream()

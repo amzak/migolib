@@ -4,7 +4,6 @@ using Avalonia.Logging;
 using Avalonia.ReactiveUI;
 using Microsoft.Extensions.Logging;
 using MigoLib.Tests;
-using MigoToolGui.Bootstrap;
 using MigoToolGui.Domain;
 using MigoToolGui.ViewModels;
 using ReactiveUI;

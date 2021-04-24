@@ -10,7 +10,6 @@ using MigoLib.Print;
 using MigoLib.Scenario;
 using MigoLib.State;
 using MigoLib.ZOffset;
-using MigoToolGui.Bootstrap;
 
 namespace MigoToolGui.Domain
 {
@@ -21,13 +20,10 @@ namespace MigoToolGui.Domain
         private readonly CancellationTokenSource _tokenSource;
         private readonly ILogger<MigoProxyService> _logger;
 
-        public MigoProxyService(ConfigProvider configProvider, ILoggerFactory loggerFactory)
+        public MigoProxyService(ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
             _tokenSource = new CancellationTokenSource();
-            var config = configProvider.GetConfig();
-            var endpoint = new MigoEndpoint(config.Ip, config.Port);
-            _migo = new Migo(loggerFactory, endpoint);
             _logger = loggerFactory.CreateLogger<MigoProxyService>();
         }
 
@@ -85,7 +81,7 @@ namespace MigoToolGui.Domain
         public void SwitchTo(MigoEndpoint endpoint)
         {
             _logger.LogDebug($"switching to {endpoint}");
-            _migo.Dispose();
+            _migo?.Dispose();
             _logger.LogDebug("old migo connection disposed");
             _migo = new Migo(_loggerFactory, endpoint);
             _logger.LogDebug("created new migo connection");

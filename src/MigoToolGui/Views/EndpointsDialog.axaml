@@ -10,7 +10,6 @@
         Padding="10"
         WindowStartupLocation="CenterOwner"
         Width="500"
-        MinHeight="600"
         >
     
     <Design.DataContext>

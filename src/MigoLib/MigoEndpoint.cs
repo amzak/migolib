@@ -5,10 +5,10 @@ using System.Net;
 namespace MigoLib
 {
     [TypeConverter(typeof(MigoEndpointTypeConverter))]
-    public struct MigoEndpoint
+    public struct MigoEndpoint : IEquatable<MigoEndpoint>
     {
-        public IPAddress Ip { get; }
-        public ushort Port { get; }
+        public IPAddress Ip { get; set; }
+        public ushort Port { get; set; }
 
         public MigoEndpoint(IPAddress ip, ushort port)
         {
@@ -69,6 +69,21 @@ namespace MigoLib
             }
 
             return IPAddress.TryParse(parts[0], out _) && ushort.TryParse(parts[1], out _);
+        }
+
+        public bool Equals(MigoEndpoint other)
+        {
+            return Equals(Ip, other.Ip) && Port == other.Port;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is MigoEndpoint other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Ip, Port);
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
@@ -30,13 +31,13 @@ namespace MigoToolGui.ViewModels
         
         public ReactiveCommand<Unit, EndpointsListModel> ReturnEndpoints { get; }
         
-        public EndpointsDialogViewModel()
+        public EndpointsDialogViewModel(IReadOnlyCollection<MigoEndpoint> endpoints)
         {
             this.ValidationRule(
                 x => x.NewConnection,
                 MigoEndpoint.IsValid,
                 "Invalid endpoint format, must be like 'ip:port'");
-            
+
             ConnectionsList = new SourceList<string>();
             ConnectionsList
                 .Connect()
@@ -44,10 +45,11 @@ namespace MigoToolGui.ViewModels
                 .Bind(out _connections)
                 .DisposeMany()
                 .Subscribe();
-            
-            ConnectionsList.Add("127.0.0.1:10086");
-            ConnectionsList.Add("127.0.0.1:10087");
-            ConnectionsList.Add("192.168.2.57:10086");
+
+            foreach (var endpoint in endpoints)
+            {
+                ConnectionsList.Add(endpoint.ToString());
+            }
 
             var canAddConnection = this
                 .IsValid()
@@ -58,9 +60,7 @@ namespace MigoToolGui.ViewModels
                 .Select(value => !string.IsNullOrEmpty(value))
                 .ObserveOn(RxApp.MainThreadScheduler);
 
-            AddConnection = ReactiveCommand.Create(
-                (Action<string>)OnAddConnection, 
-                canAddConnection);
+            AddConnection = ReactiveCommand.Create((Action<string>)OnAddConnection, canAddConnection);
             RemoveConnection = ReactiveCommand.Create((Action<string>)OnRemoveConnection, canRemoveConnection);
 
             ReturnEndpoints = ReactiveCommand.Create(OnReturnConnections);
