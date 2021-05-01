@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using MigoLib.FileUpload;
 using MigoLib.GCode;
 using MigoLib.Print;
+using MigoLib.PrinterInfo;
 using MigoLib.State;
 using MigoLib.ZOffset;
 
@@ -151,6 +152,14 @@ namespace MigoLib
                 .ConfigureAwait(false);
             
             var result = await _readerWriter.Get(Parsers.StopPrintResult)
+                .ConfigureAwait(false);
+
+            return result;
+        }
+
+        public async Task<PrinterInfoResult> GetPrinterInfo()
+        {
+            var result = await _readerWriter.Get(Parsers.GetPrinterInfo)
                 .ConfigureAwait(false);
 
             return result;

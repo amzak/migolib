@@ -1,6 +1,7 @@
 using MigoLib.FileUpload;
 using MigoLib.GCode;
 using MigoLib.Print;
+using MigoLib.PrinterInfo;
 using MigoLib.State;
 using MigoLib.ZOffset;
 
@@ -21,5 +22,7 @@ namespace MigoLib
         public static IResultParser<StartPrintResult> StartPrintResult => new StartPrintResultParser();
 
         public static IResultParser<StopPrintResult> StopPrintResult => new StopPrintResultParser();
+        
+        public static IResultParser<PrinterInfoResult> GetPrinterInfo => new PrinterInfoResultParser();
     }
 }

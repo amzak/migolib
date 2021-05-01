@@ -20,6 +20,7 @@ namespace MigoToolCli.Commands
         {
             yield return new GetZOffsetCommand();
             yield return new GetStateCommand();
+            yield return new GetPrinterInfoCommand();
         }
     }
 }

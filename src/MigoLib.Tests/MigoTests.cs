@@ -210,5 +210,18 @@ namespace MigoLib.Tests
 
             result.Success.Should().BeTrue();
         }
+
+        [Test]
+        public async Task Should_get_printer_info()
+        {
+            _fakeMigo
+                .ReplyMode(FakeMigoMode.Reply)
+                .ReplyPrinterInfo();
+
+            var result = await _migo.GetPrinterInfo()
+                .ConfigureAwait(false);
+
+            result.StatedDescription.Should().Be("modelprinting:3DBenchy.gcode");
+        }
     }
 }

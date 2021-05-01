@@ -57,12 +57,25 @@ namespace MigoLib
             var memberExpression = (MemberExpression) accessor.Body;
             var property = (PropertyInfo) memberExpression.Member;
             var setMethod = property.GetSetMethod();
-            
-            var block = Expression.Block(
-                new [] { prop },
-                Expression.Call(typeof(TProperty), "TryParse", null, lexem, prop),
-                Expression.Call(model, setMethod, prop));
 
+            Expression block;
+            if (typeof(TProperty) == typeof(string))
+            {
+                var toString = typeof(ReadOnlySpan<char>)
+                    .GetMethod("ToString");
+                
+                var lexemAsString = Expression.Call(lexem, toString);
+
+                block = Expression.Call(model, setMethod, lexemAsString);
+            }
+            else
+            {
+                block = Expression.Block(
+                    new [] { prop },
+                    Expression.Call(typeof(TProperty), "TryParse", null, lexem, prop),
+                    Expression.Call(model, setMethod, prop));
+            }
+            
             var parameters = new[] {lexem, model};
             
             var blockCall = Expression.Lambda<ReadOnlySpanAction<char, T>>(

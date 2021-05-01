@@ -269,5 +269,8 @@ namespace MigoLib.Tests
             => FixReply($"@#printstartfailed;fn:{fileName}#@");
 
         public void ReplyPrintStopped() => FixReply("@#stopped;#@");
+
+        public void ReplyPrinterInfo() =>
+            FixReply("@#getprinterinfor;id:100196;state:11;modelprinting:3DBenchy.gcode;printername:100196;color:1;type:0;version:124;lock:;#@");
     }
 }

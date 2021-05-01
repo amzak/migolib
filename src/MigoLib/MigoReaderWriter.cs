@@ -70,7 +70,6 @@ namespace MigoLib
                 await _connectionCheckSemaphore.WaitAsync().ConfigureAwait(false);
 
                 _logger.LogInformation("EnsureConnection()");
-                _logger.LogInformation(Environment.StackTrace);
                 if (_socket != default && _socket.Connected)
                 {
                     _logger.LogInformation($"ensuring connection... {_socket.RemoteEndPoint}");
