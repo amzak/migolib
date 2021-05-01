@@ -86,6 +86,19 @@ namespace MigoToolGui.ViewModels
             ShowEndpointsDialog = new Interaction<EndpointsDialogViewModel, EndpointsListModel>();
             ShowEndpointsDialogCommand = ReactiveCommand.CreateFromTask(OnShowEndpointsDialog);
 
+            GCodeFileSelected = ReactiveCommand.Create<string>(OnGCodeFileSelected);
+
+            SetZOffsetCommand = ReactiveCommand.CreateFromTask(
+                (Func<double, Task>)SetZOffset);
+            
+            var canStartPrint = this
+                .WhenAnyValue(model => model.GcodeFileName)
+                .Select(x => !string.IsNullOrEmpty(x))
+                .ObserveOn(RxApp.MainThreadScheduler);
+            
+            StartPrintCommand = ReactiveCommand.CreateFromTask(StartPrint, canStartPrint);
+            StopPrintCommand = ReactiveCommand.CreateFromTask(StopPrint);
+
             this.WhenActivated(OnActivated);
         }
 
@@ -167,20 +180,7 @@ namespace MigoToolGui.ViewModels
                 .Subscribe(InitConfig);
 
             this.WhenAnyValue(model => model.SelectedEndpoint)
-                .Subscribe(OnSelectedEndpointChanged);
-            
-            SetZOffsetCommand = ReactiveCommand.CreateFromTask(
-                (Func<double, Task>)SetZOffset);
-            
-            GCodeFileSelected = ReactiveCommand.Create<string>(OnGCodeFileSelected);
-
-            var canStartPrint = this
-                .WhenAnyValue(model => model.GcodeFileName)
-                .Select(x => !string.IsNullOrEmpty(x))
-                .ObserveOn(RxApp.MainThreadScheduler);
-            
-            StartPrintCommand = ReactiveCommand.CreateFromTask(StartPrint, canStartPrint);
-            StopPrintCommand = ReactiveCommand.CreateFromTask(StopPrint);
+                .Subscribe(OnSelectedEndpointChanged); 
         }
 
         private void InitConfig(Config config)

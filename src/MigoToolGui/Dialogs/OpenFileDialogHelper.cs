@@ -56,7 +56,7 @@ namespace MigoToolGui.Dialogs
         public OpenFileDialogHelper()
         {
             CommandParameter = new object();
-            _fileSelectedCommand = ReactiveCommand.Create(() => { });
+            _fileSelectedCommand = ReactiveCommand.Create<string, Unit>(_ => Unit.Default);
             ShowDialog = ReactiveCommand.CreateFromTask(ShowDialogAction);
         }
 
