@@ -159,6 +159,17 @@ namespace MigoLib
 
         public async Task<PrinterInfoResult> GetPrinterInfo()
         {
+            byte[] buffer = new byte[100];
+
+            var length = await CommandChain
+                .On(buffer)
+                .GetPrinterInfo()
+                .ExecuteAsync()
+                .ConfigureAwait(false);
+    
+            await _readerWriter.Write(buffer, length)
+                .ConfigureAwait(false);
+
             var result = await _readerWriter.Get(Parsers.GetPrinterInfo)
                 .ConfigureAwait(false);
 

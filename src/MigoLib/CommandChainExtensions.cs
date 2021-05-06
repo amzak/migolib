@@ -1,5 +1,6 @@
 using MigoLib.GCode;
 using MigoLib.Print;
+using MigoLib.PrinterInfo;
 using MigoLib.ZOffset;
 
 namespace MigoLib
@@ -9,6 +10,13 @@ namespace MigoLib
         public static CommandChain GetZOffset(this CommandChain self)
         {
             var command = new GetZOffsetCommand();
+            self.Append(command);
+            return self;
+        }
+
+        public static CommandChain GetPrinterInfo(this CommandChain self)
+        {
+            var command = new GetPrinterInfoCommand();
             self.Append(command);
             return self;
         }
