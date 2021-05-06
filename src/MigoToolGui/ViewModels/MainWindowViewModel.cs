@@ -8,6 +8,7 @@ using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MigoLib;
+using MigoLib.FileUpload;
 using MigoToolGui.Domain;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
@@ -35,6 +36,9 @@ namespace MigoToolGui.ViewModels
         
         [Reactive]
         public string GcodeFileName { get; set; }
+        
+        [Reactive]
+        public string State { get; set; }
 
         public ReactiveCommand<double, Unit> SetZOffsetCommand { get; set; }
         
@@ -78,6 +82,7 @@ namespace MigoToolGui.ViewModels
             PreheatEnabled = true;
             PreheatTemperature = 100;
             GcodeFileName = string.Empty;
+            State = "Idle";
 
             Endpoints = new ObservableCollection<MigoEndpoint>();
             NozzleTValues = new ObservableCollection<TemperaturePoint>();
@@ -86,7 +91,8 @@ namespace MigoToolGui.ViewModels
             ShowEndpointsDialog = new Interaction<EndpointsDialogViewModel, EndpointsListModel>();
             ShowEndpointsDialogCommand = ReactiveCommand.CreateFromTask(OnShowEndpointsDialog);
 
-            GCodeFileSelected = ReactiveCommand.Create<string>(OnGCodeFileSelected);
+            GCodeFileSelected = ReactiveCommand.CreateFromTask(
+                (Func<string, Task>)OnGCodeFileSelected);
 
             SetZOffsetCommand = ReactiveCommand.CreateFromTask(
                 (Func<double, Task>)SetZOffset);
@@ -156,8 +162,16 @@ namespace MigoToolGui.ViewModels
             SelectedEndpoint = selected;
         }
 
-        private async Task StartPrint() 
-            => await _migoProxyService.PreheatAndPrint(GcodeFileName, PreheatTemperature);
+        private async Task StartPrint()
+        {
+            State = "Uploading...";
+            await _migoProxyService.UploadGcode(GcodeFileName);
+            State = "Preparing for new print...";
+            await _migoProxyService.PreheatAndPrint(GcodeFileName, PreheatTemperature);
+
+            var printerInfo = await _migoProxyService.GetPrinterInfo();
+            State = printerInfo.StatedDescription;
+        }
 
         private Task StopPrint() 
             => _migoProxyService.StopPrint();
@@ -165,7 +179,7 @@ namespace MigoToolGui.ViewModels
         private Task SetZOffset(double offset) 
             => _migoProxyService.SetZOffset(offset);
 
-        private void OnGCodeFileSelected(string fileName)
+        private async Task OnGCodeFileSelected(string fileName)
         {
             GcodeFileName = fileName;
         }
@@ -204,7 +218,12 @@ namespace MigoToolGui.ViewModels
             _migoProxyService.GetProgressStream(_cancellationTokenSource.Token)
                 .ToObservable()
                 .ObserveOn(RxApp.MainThreadScheduler)
-                .Subscribe(percent => { ProgressStatus = percent.Percent; }, IgnoreTaskCancelledException);
+                .Subscribe(OnProgressReport, IgnoreTaskCancelledException);
+        }
+
+        private void OnProgressReport(FilePercentResult percent)
+        {
+            ProgressStatus = percent.Percent;
         }
 
         private void SubscribeOnStateStream()

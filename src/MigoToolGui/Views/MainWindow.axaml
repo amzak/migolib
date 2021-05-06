@@ -99,11 +99,19 @@
                 Width="80"
                 TextAlignment="Right"
                 VerticalAlignment="Center"
-                Text="Idle"/>                
+                Text="{Binding State}"/>                
+        </StackPanel>
+        <StackPanel Orientation="Vertical">
+            <ProgressBar
+                Margin="0, 5, 0, 0"
+                HorizontalAlignment="Stretch"
+                Maximum="100" 
+                Minimum="0" 
+                Value="{Binding ProgressStatus}" />
         </StackPanel>
         <oxy:Plot
             Height="400"
-            Margin="0,20"
+            Margin="0, 10,0, 10"
             PlotMargins="50 0 0 0"
             LegendTextColor="White"
             LegendBackground="Black"
@@ -178,9 +186,6 @@
                             VerticalAlignment="Stretch"
                             Value="{Binding PreheatTemperature}">
                         </NumericUpDown>
-                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                            <ProgressBar Maximum="100" Minimum="0" Value="{Binding ProgressStatus}" />
-                        </StackPanel>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                         <Button

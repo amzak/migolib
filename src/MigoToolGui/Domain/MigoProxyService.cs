@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using MigoLib;
 using MigoLib.FileUpload;
 using MigoLib.Print;
+using MigoLib.PrinterInfo;
 using MigoLib.Scenario;
 using MigoLib.State;
 using MigoLib.ZOffset;
@@ -86,5 +87,9 @@ namespace MigoToolGui.Domain
             _migo = new Migo(_loggerFactory, endpoint);
             _logger.LogDebug("created new migo connection");
         }
+
+        public Task UploadGcode(string fileName) => _migo.UploadGCodeFile(fileName);
+
+        public Task<PrinterInfoResult> GetPrinterInfo() => _migo.GetPrinterInfo();
     }
 }
