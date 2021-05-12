@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="Domain\" />
@@ -31,6 +32,10 @@
   <ItemGroup>
     <Compile Update="Views\EndpointsDialog.axaml.cs">
       <DependentUpon>ConnectionsDialog.axaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Views\ManualControlView.axaml.cs">
+      <DependentUpon>ManualControl.axaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
