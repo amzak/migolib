@@ -70,6 +70,8 @@ namespace MigoToolGui.ViewModels
         
         public ReactiveCommand<Unit, Unit> ShowEndpointsDialogCommand { get; set;}
         
+        public ManualControlViewModel ManualControl { get; }
+        
         public MainWindowViewModel(MigoProxyService migoProxyService, ConfigProvider configProvider)
         {
             Activator = new ViewModelActivator();
@@ -83,6 +85,8 @@ namespace MigoToolGui.ViewModels
             PreheatTemperature = 100;
             GcodeFileName = string.Empty;
             State = "Idle";
+
+            ManualControl = new ManualControlViewModel(migoProxyService);
 
             Endpoints = new ObservableCollection<MigoEndpoint>();
             NozzleTValues = new ObservableCollection<TemperaturePoint>();

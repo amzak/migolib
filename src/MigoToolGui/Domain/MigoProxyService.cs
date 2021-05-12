@@ -91,5 +91,9 @@ namespace MigoToolGui.Domain
         public Task UploadGcode(string fileName) => _migo.UploadGCodeFile(fileName);
 
         public Task<PrinterInfoResult> GetPrinterInfo() => _migo.GetPrinterInfo();
+
+        public Task ExecuteGCode(string[] lines) => _migo.ExecuteGCode(lines);
+
+        public Task ExecuteGCode(string line) => _migo.ExecuteGCode(new [] {line});
     }
 }
