@@ -156,8 +156,6 @@ namespace MigoLib
             var reader = _pipe.Reader;
             ReadResult result;
 
-            long consumedTotal = 0;
-            
             do
             {
                 _logger.LogDebug($"reading from pipe...");
@@ -169,11 +167,10 @@ namespace MigoLib
                 _logger.LogDebug($"reader result {result.IsCompleted} {result.IsCanceled} {buffer.Length}");
 
                 var consumed = ProcessBuffer(ref buffer);
-                consumedTotal += consumed;
                 
                 reader.AdvanceTo(buffer.GetPosition(consumed), buffer.End);
 
-                _logger.LogDebug($"consumed {consumed} consumedTotal {consumedTotal}");
+                _logger.LogDebug($"consumed {consumed}");
             } 
             while (!result.IsCompleted);
 
@@ -377,15 +374,13 @@ namespace MigoLib
             return bytesSent;
         }
 
-        public async Task<int> Write(byte[] buffer, int length)
+        public async Task<int> Write(Memory<byte> buffer)
         {
             await EnsureConnection()
                 .ConfigureAwait(false);
             
-            ArraySegment<byte> buf = buffer;
-            
             return await _socket
-                .SendAsync(buf.Slice(0, length), SocketFlags.None)
+                .SendAsync(buffer, SocketFlags.None)
                 .ConfigureAwait(false);
         }
 

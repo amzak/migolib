@@ -35,7 +35,7 @@ namespace MigoLib
             byte[] buffer = new byte[100];
             
             var chunks = CommandChain
-                .On(buffer)
+                .Start(buffer)
                 .SetZOffset(zOffset)
                 .GetZOffset()
                 .AsChunks();
@@ -51,15 +51,13 @@ namespace MigoLib
 
         public async Task<ZOffsetModel> GetZOffset()
         {
-            byte[] buffer = new byte[100];
-
-            var length = await CommandChain
-                .On(buffer)
+            var buffer = await CommandChain
+                .Start()
                 .GetZOffset()
                 .ExecuteAsync()
                 .ConfigureAwait(false);
     
-            await _readerWriter.Write(buffer, length)
+            await _readerWriter.Write(buffer)
                 .ConfigureAwait(false);
             
             var result = await _readerWriter.Get(Parsers.GetZOffset)
@@ -78,15 +76,13 @@ namespace MigoLib
 
         public async Task<GCodeResultModel> ExecuteGCode(string[] lines)
         {
-            byte[] buffer = new byte[100];
-            
-            var length = await CommandChain
-                .On(buffer)
+            var buffer = await CommandChain
+                .Start()
                 .ExecuteGCode(lines)
                 .ExecuteAsync()
                 .ConfigureAwait(false);
 
-            await _readerWriter.Write(buffer, length)
+            await _readerWriter.Write(buffer)
                 .ConfigureAwait(false);
 
             var result = await _readerWriter.Get(Parsers.GetGCodeResult)
@@ -121,15 +117,13 @@ namespace MigoLib
 
         public async Task<StartPrintResult> StartPrint(string fileName)
         {
-            byte[] buffer = new byte[100];
-
-            var length = await CommandChain
-                .On(buffer)
+            var buffer = await CommandChain
+                .Start()
                 .StartPrint(fileName)
                 .ExecuteAsync()
                 .ConfigureAwait(false);
     
-            await _readerWriter.Write(buffer, length)
+            await _readerWriter.Write(buffer)
                 .ConfigureAwait(false);
             
             var result = await _readerWriter.Get(Parsers.StartPrintResult)
@@ -140,15 +134,13 @@ namespace MigoLib
 
         public async Task<StopPrintResult> StopPrint()
         {
-            byte[] buffer = new byte[100];
-
-            var length = await CommandChain
-                .On(buffer)
+            var buffer = await CommandChain
+                .Start()
                 .StopPrint()
                 .ExecuteAsync()
                 .ConfigureAwait(false);
     
-            await _readerWriter.Write(buffer, length)
+            await _readerWriter.Write(buffer)
                 .ConfigureAwait(false);
             
             var result = await _readerWriter.Get(Parsers.StopPrintResult)
@@ -159,15 +151,13 @@ namespace MigoLib
 
         public async Task<PrinterInfoResult> GetPrinterInfo()
         {
-            byte[] buffer = new byte[100];
-
-            var length = await CommandChain
-                .On(buffer)
+            var buffer = await CommandChain
+                .Start()
                 .GetPrinterInfo()
                 .ExecuteAsync()
                 .ConfigureAwait(false);
     
-            await _readerWriter.Write(buffer, length)
+            await _readerWriter.Write(buffer)
                 .ConfigureAwait(false);
 
             var result = await _readerWriter.Get(Parsers.GetPrinterInfo)

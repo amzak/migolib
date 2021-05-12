@@ -20,8 +20,11 @@ namespace MigoLib
             _commands = new List<Command>();
         }
 
-        public static CommandChain On(byte[] buffer) 
-            => new CommandChain(buffer);
+        public static CommandChain Start(byte[] buffer = null)
+        {
+            buffer ??= new byte[100];
+            return new CommandChain(buffer);
+        }
 
         internal CommandChain Append(Command command)
         {
@@ -34,7 +37,7 @@ namespace MigoLib
             _writer?.Dispose();
         }
 
-        public async Task<int> ExecuteAsync()
+        public async Task<Memory<byte>> ExecuteAsync()
         {
             foreach (var command in _commands)
             {
@@ -43,7 +46,10 @@ namespace MigoLib
             
             _writer.Flush();
             
-            return (int) _writer.BaseStream.Position;
+            var length = (int) _writer.BaseStream.Position;
+            var memory = new Memory<byte>(_buffer, 0, length);
+            
+            return memory;
         }
 
         public async IAsyncEnumerable<ReadOnlyMemory<byte>> AsChunks()
