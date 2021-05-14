@@ -1,3 +1,4 @@
+using MigoLib.CurrentPosition;
 using MigoLib.FileUpload;
 using MigoLib.GCode;
 using MigoLib.Print;
@@ -24,5 +25,7 @@ namespace MigoLib
         public static IResultParser<StopPrintResult> StopPrintResult => new StopPrintResultParser();
         
         public static IResultParser<PrinterInfoResult> GetPrinterInfo => new PrinterInfoResultParser();
+        
+        public static IResultParser<CurrentPositionResult> GetCurrentPosition => new CurrentPositionParser();
     }
 }

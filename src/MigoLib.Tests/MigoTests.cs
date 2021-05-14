@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using MigoLib.CurrentPosition;
 using MigoLib.State;
 using NUnit.Framework;
 
@@ -222,6 +223,24 @@ namespace MigoLib.Tests
                 .ConfigureAwait(false);
 
             result.StatedDescription.Should().Be("modelprinting:3DBenchy.gcode");
+        }
+
+        [Test]
+        public async Task Should_set_current_position()
+        {
+            var position = new Position(10, 5, 2);
+            
+            _fakeMigo
+                .ReplyMode(FakeMigoMode.RequestReply)
+                .ReplyCurrentPosition(position);
+
+            var result = await _migo.SetCurrentPosition(position.X, position.Y, position.Z)
+                .ConfigureAwait(false);
+
+            result.Success.Should().BeTrue();
+            result.X.Should().Be(position.X);
+            result.Y.Should().Be(position.Y);
+            result.Z.Should().Be(position.Z);
         }
     }
 }

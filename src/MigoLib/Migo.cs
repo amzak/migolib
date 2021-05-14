@@ -5,6 +5,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using MigoLib.CurrentPosition;
 using MigoLib.FileUpload;
 using MigoLib.GCode;
 using MigoLib.Print;
@@ -32,10 +33,8 @@ namespace MigoLib
 
         public async Task<ZOffsetModel> SetZOffset(double zOffset)
         {
-            byte[] buffer = new byte[100];
-            
             var chunks = CommandChain
-                .Start(buffer)
+                .Start()
                 .SetZOffset(zOffset)
                 .GetZOffset()
                 .AsChunks();
@@ -171,6 +170,23 @@ namespace MigoLib
             var result = await _readerWriter.Get(Parsers.GetFilePercent)
                 .ConfigureAwait(false);
 
+            return result;
+        }
+        
+        public async Task<CurrentPositionResult> SetCurrentPosition(double x, double y, double z)
+        {
+            var buffer = await CommandChain
+                .Start()
+                .SetCurrentPosition(x, y, z)
+                .ExecuteAsync()
+                .ConfigureAwait(false);
+
+            await _readerWriter.Write(buffer)
+                .ConfigureAwait(false);
+            
+            var result = await _readerWriter.Get(Parsers.GetCurrentPosition)
+                .ConfigureAwait(false);
+            
             return result;
         }
 

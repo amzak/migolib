@@ -1,3 +1,4 @@
+using MigoLib.CurrentPosition;
 using MigoLib.GCode;
 using MigoLib.Print;
 using MigoLib.PrinterInfo;
@@ -45,6 +46,14 @@ namespace MigoLib
         public static CommandChain StopPrint(this CommandChain self)
         {
             var command = new StopPrintCommand();
+            self.Append(command);
+            return self;
+        }
+
+        public static CommandChain SetCurrentPosition(this CommandChain self, double x, double y, double z)
+        {
+            var position = new Position(x, y, z);
+            var command = new SetCurrentPositionCommand(position);
             self.Append(command);
             return self;
         }

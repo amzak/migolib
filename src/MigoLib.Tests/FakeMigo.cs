@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using MigoLib.CurrentPosition;
 using MigoLib.State;
 
 namespace MigoLib.Tests
@@ -270,7 +271,10 @@ namespace MigoLib.Tests
 
         public void ReplyPrintStopped() => FixReply("@#stopped;#@");
 
-        public void ReplyPrinterInfo() =>
-            FixReply("@#getprinterinfor;id:100196;state:11;modelprinting:3DBenchy.gcode;printername:100196;color:1;type:0;version:124;lock:;#@");
+        public void ReplyPrinterInfo() 
+            => FixReply("@#getprinterinfor;id:100196;state:11;modelprinting:3DBenchy.gcode;printername:100196;color:1;type:0;version:124;lock:;#@");
+
+        public void ReplyCurrentPosition(Position pos) 
+            => FixReply($"@#curposition:{pos.X.ToString("#.##")};{pos.Y.ToString("#.##")};{pos.Z.ToString("#.##")};#@");
     }
 }
