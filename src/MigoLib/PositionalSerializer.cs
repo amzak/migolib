@@ -14,7 +14,7 @@ namespace MigoLib
 
     public class PositionalSerializer<T> where T: new()
     {
-        private readonly List<ReadOnlySpanAction<char, T>> _fieldParsers;
+        private readonly List<PositionParser<T>> _fieldParsers;
 
         private T _data;
         private char _delimiter;
@@ -24,11 +24,11 @@ namespace MigoLib
         public PositionalSerializer(char delimiter)
         {
             _delimiter = delimiter;
-            _fieldParsers = new List<ReadOnlySpanAction<char, T>>();
+            _fieldParsers = new List<PositionParser<T>>();
             _data = new T();
         }
 
-        public ReadOnlySpanAction<char, T> GetParser(int fieldIndex)
+        public PositionParser<T> GetParser(int fieldIndex)
         {
             if (fieldIndex >= _fieldParsers.Count)
             {
@@ -41,8 +41,10 @@ namespace MigoLib
         public PositionalSerializer<T> Field<TProperty>(
             Expression<Func<T, TProperty>> expression)
         {
-            var parser = CompileParserSpan(expression);
-            
+            var parserAction = CompileParserSpan(expression);
+
+            var parser = new PositionParser<T>(parserAction, _delimiter);
+
             _fieldParsers.Add(parser);
             return this;
         }
@@ -112,7 +114,9 @@ namespace MigoLib
 
         public PositionalSerializer<T> FixedString(string @fixed)
         {
-            _fieldParsers.Add(VerifyFixedString(@fixed));
+            var parserAction = VerifyFixedString(@fixed);
+            var parser = new PositionParser<T>(parserAction, _delimiter);
+            _fieldParsers.Add(parser);
             return this;
         }
 
@@ -126,7 +130,8 @@ namespace MigoLib
 
             for (int i = 0; i < count; i++)
             {
-                _fieldParsers.Add(SkipItem);
+                var parser = new PositionParser<T>(SkipItem, _delimiter);
+                _fieldParsers.Add(parser);
             }
             
             return this;
@@ -139,21 +144,24 @@ namespace MigoLib
             int fieldIndex = 0;
             int length = input.Length;
             
+            var currentParser = GetParser(fieldIndex);
+
             for (int i = 0; i < length; i++)
             {
-                if (input[i] != _delimiter)
+                if (input[i] != currentParser.Delimiter)
                 {
                     continue;
                 }
 
                 to = i;
-                if (!TryParseField(input, from, to, fieldIndex))
+                if (!TryParseField(currentParser, input, from, to, fieldIndex))
                 {
                     return _data;
                 }
 
                 from = to + 1;
                 fieldIndex++;
+                currentParser = GetParser(fieldIndex);
             }
 
             if (to == length - 1) 
@@ -163,23 +171,23 @@ namespace MigoLib
 
             if (from != to)
             {
-                TryParseField(input, from, to, fieldIndex);
+                var parser = GetParser(fieldIndex);
+                TryParseField(parser, input, from, to, fieldIndex);
             }
             
             return _data;
         }
 
-        private bool TryParseField(ReadOnlySpan<char> input, int from, int to, int fieldIndex)
+        private bool TryParseField(PositionParser<T> parser, ReadOnlySpan<char> input, int from, int to, int fieldIndex)
         {
             var slice = input.Slice(from, to - from);
 
-            var parser = GetParser(fieldIndex);
-            parser(slice, _data);
+            parser.ParserAction(slice, _data);
 
             return !(IsError || fieldIndex == _fieldParsers.Count - 1);
         }
 
-        public PositionalSerializer<T> Delimiter(char delimiter)
+        public PositionalSerializer<T> NextDelimiter(char delimiter)
         {
             _delimiter = delimiter;
             return this;
@@ -203,8 +211,9 @@ namespace MigoLib
                 .Lambda<ReadOnlySpanAction<char, T>>(block,parameters);
 
             var blockCallCompiled = blockCall.Compile();
-            
-            _fieldParsers.Add(blockCallCompiled);
+
+            var parser = new PositionParser<T>(blockCallCompiled, _delimiter);
+            _fieldParsers.Add(parser);
             return this;
         }
 

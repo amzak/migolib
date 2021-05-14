@@ -5,7 +5,7 @@ namespace MigoLib.FileUpload
         protected override void Setup(PositionalSerializer<FilePercentResult> serializer)
         {
             serializer
-                .Delimiter(':')
+                .NextDelimiter(':')
                 .FixedString("filepercent")
                 .Field(x => x.Percent);
         }

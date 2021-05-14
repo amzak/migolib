@@ -76,5 +76,27 @@ namespace MigoLib.Tests
 
             result.PrintStarted.Should().Be(expected);
         }
+        
+        [Test]
+        public void Should_deserialize_simple_type_with_several_delimiter_changes()
+        {
+            var serializer = PositionalSerializer
+                .CreateFor<SerializerTestModel>(':')
+                .FixedString(SerializerTestModel.FixedString)
+                .NextDelimiter(';')
+                .Field(x => x.FieldA)
+                .Field(x => x.FieldB)
+                .NextDelimiter(',')
+                .Field(x => x.FieldC)
+                .Field(x => x.FieldD)
+                .Field(x => x.FieldE);
+
+            var expected = SerializerTestModel.Expected;
+            var result = serializer.Parse(expected.GetStringRepresentation());
+
+            serializer.IsError.Should().BeFalse();
+            result.Should().BeEquivalentTo(expected);
+        }
+        
     }
 }
