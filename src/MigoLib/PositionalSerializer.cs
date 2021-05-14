@@ -7,18 +7,18 @@ using System.Reflection;
 namespace MigoLib
 {
     public static class PositionalSerializer
-    {    
-        public static PositionalSerializer<T> CreateFor<T>(char delimiter)  where T: new()
+    {
+        public static PositionalSerializer<T> CreateFor<T>(char delimiter) where T : new()
             => new PositionalSerializer<T>(delimiter);
     }
 
-    public class PositionalSerializer<T> where T: new()
+    public class PositionalSerializer<T> where T : new()
     {
         private readonly List<PositionParser<T>> _fieldParsers;
 
         private T _data;
         private char _delimiter;
-        
+
         public bool IsError { get; private set; }
 
         public PositionalSerializer(char delimiter)
@@ -37,7 +37,7 @@ namespace MigoLib
 
             return _fieldParsers[fieldIndex];
         }
-        
+
         public PositionalSerializer<T> Field<TProperty>(
             Expression<Func<T, TProperty>> expression)
         {
@@ -55,7 +55,7 @@ namespace MigoLib
             ParameterExpression model = Expression.Parameter(typeof(T), "model");
             ParameterExpression lexem = Expression.Parameter(typeof(ReadOnlySpan<char>), "lexem");
             ParameterExpression prop = Expression.Parameter(typeof(TProperty), "prop");
-            
+
             var memberExpression = (MemberExpression) accessor.Body;
             var property = (PropertyInfo) memberExpression.Member;
             var setMethod = property.GetSetMethod();
@@ -65,7 +65,7 @@ namespace MigoLib
             {
                 var toString = typeof(ReadOnlySpan<char>)
                     .GetMethod("ToString");
-                
+
                 var lexemAsString = Expression.Call(lexem, toString);
 
                 block = Expression.Call(model, setMethod, lexemAsString);
@@ -73,40 +73,40 @@ namespace MigoLib
             else
             {
                 block = Expression.Block(
-                    new [] { prop },
+                    new[] {prop},
                     Expression.Call(typeof(TProperty), "TryParse", null, lexem, prop),
                     Expression.Call(model, setMethod, prop));
             }
-            
+
             var parameters = new[] {lexem, model};
-            
+
             var blockCall = Expression.Lambda<ReadOnlySpanAction<char, T>>(
-                block, 
+                block,
                 parameters).Compile();
 
             return blockCall;
         }
-        
+
         private Action<T, string> CompileParser<TProperty>(
             Expression<Func<T, TProperty>> accessor)
         {
             ParameterExpression model = Expression.Parameter(typeof(T), "model");
             ParameterExpression lexem = Expression.Parameter(typeof(string), "lexem");
             ParameterExpression prop = Expression.Parameter(typeof(TProperty), "prop");
-            
+
             var memberExpression = (MemberExpression) accessor.Body;
             var property = (PropertyInfo) memberExpression.Member;
             var setMethod = property.GetSetMethod();
-            
+
             var block = Expression.Block(
-                new [] {prop},
+                new[] {prop},
                 Expression.Call(typeof(TProperty), "TryParse", null, lexem, prop),
                 Expression.Call(model, setMethod, prop));
 
             var parameters = new[] {model, lexem};
-            
+
             var blockCall = Expression.Lambda<Action<T, string>>(
-                block, 
+                block,
                 parameters).Compile();
 
             return blockCall;
@@ -120,20 +120,22 @@ namespace MigoLib
             return this;
         }
 
-        private ReadOnlySpanAction<char, T> VerifyFixedString(string @fixed) 
-            => (lexem, model) 
+        private ReadOnlySpanAction<char, T> VerifyFixedString(string @fixed)
+            => (lexem, model)
                 => IsError = !lexem.Equals(@fixed, StringComparison.Ordinal);
 
         public PositionalSerializer<T> Skip(int count = 1)
         {
-            void SkipItem(ReadOnlySpan<char> span, T arg) { }
+            void SkipItem(ReadOnlySpan<char> span, T arg)
+            {
+            }
 
             for (int i = 0; i < count; i++)
             {
                 var parser = new PositionParser<T>(SkipItem, _delimiter);
                 _fieldParsers.Add(parser);
             }
-            
+
             return this;
         }
 
@@ -141,50 +143,41 @@ namespace MigoLib
         {
             int from = 0;
             int to = 0;
-            int fieldIndex = 0;
             int length = input.Length;
-            
-            var currentParser = GetParser(fieldIndex);
 
-            for (int i = 0; i < length; i++)
+            int charIndex = 0;
+
+            foreach (var fieldParser in _fieldParsers)
             {
-                if (input[i] != currentParser.Delimiter)
-                {
-                    continue;
-                }
-
-                to = i;
-                if (!TryParseField(currentParser, input, from, to, fieldIndex))
+                if (charIndex >= length)
                 {
                     return _data;
                 }
 
+                do
+                {
+                    charIndex++;
+                } 
+                while (charIndex < length && input[charIndex] != fieldParser.Delimiter);
+                    
+                to = charIndex;
+                ParseField(fieldParser, input, from, to);
+
                 from = to + 1;
-                fieldIndex++;
-                currentParser = GetParser(fieldIndex);
+
+                if (IsError)
+                {
+                    return _data;
+                }
             }
 
-            if (to == length - 1) 
-                return _data;
-            
-            to = length;
-
-            if (from != to)
-            {
-                var parser = GetParser(fieldIndex);
-                TryParseField(parser, input, from, to, fieldIndex);
-            }
-            
             return _data;
         }
 
-        private bool TryParseField(PositionParser<T> parser, ReadOnlySpan<char> input, int from, int to, int fieldIndex)
+        private void ParseField(PositionParser<T> parser, ReadOnlySpan<char> input, int from, int to)
         {
             var slice = input.Slice(from, to - from);
-
             parser.ParserAction(slice, _data);
-
-            return !(IsError || fieldIndex == _fieldParsers.Count - 1);
         }
 
         public PositionalSerializer<T> NextDelimiter(char delimiter)
@@ -199,16 +192,16 @@ namespace MigoLib
         {
             ParameterExpression model = Expression.Parameter(typeof(T), "model");
             ParameterExpression lexem = Expression.Parameter(typeof(ReadOnlySpan<char>), "lexem");
-           
+
             var parameters = new[] {lexem, model};
 
             var block = Expression.Block(
                 CompileSwitch(model, lexem, switch1),
                 CompileSwitch(model, lexem, switch2)
             );
-            
+
             var blockCall = Expression
-                .Lambda<ReadOnlySpanAction<char, T>>(block,parameters);
+                .Lambda<ReadOnlySpanAction<char, T>>(block, parameters);
 
             var blockCallCompiled = blockCall.Compile();
 
@@ -229,26 +222,26 @@ namespace MigoLib
             var marker = Expression.Constant(switchCase.marker);
             var valueToSet = Expression.Constant(switchCase.value);
             var comparisonMethod = Expression.Constant(StringComparison.Ordinal);
-            
+
             var asSpan = typeof(MemoryExtensions)
                 .GetMethod(
                     "AsSpan",
-                    new [] {typeof(string)});
+                    new[] {typeof(string)});
 
             var spanEquals = typeof(MemoryExtensions)
                 .GetMethod(
                     "Equals",
-                    new []
+                    new[]
                     {
-                        typeof(ReadOnlySpan<char>), 
+                        typeof(ReadOnlySpan<char>),
                         typeof(ReadOnlySpan<char>),
                         typeof(StringComparison)
                     });
 
             var markerAsSpan = Expression.Call(asSpan, marker);
 
-            var equalityTest = Expression.Call(spanEquals, 
-                lexem, 
+            var equalityTest = Expression.Call(spanEquals,
+                lexem,
                 markerAsSpan,
                 comparisonMethod);
             var block = Expression.Call(model, setMethod, valueToSet);
