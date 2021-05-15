@@ -23,6 +23,7 @@ namespace MigoToolCli.Commands
             yield return new ExecuteUploadGCodeFileCommand();
             yield return new ExecuteStartPrintCommand();
             yield return new ExecuteStopPrintCommand();
+            yield return new ExecuteManualCalibrationCommand();
         }
     }
 }

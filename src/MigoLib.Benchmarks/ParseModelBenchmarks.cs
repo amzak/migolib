@@ -19,8 +19,8 @@ namespace MigoLib.Benchmarks
                 .Field(x => x.BedTemp)
                 .Field(x => x.HeadX);
             
-            _intParser = _positionalSerializer.GetParser(0);
-            _doubleParser = _positionalSerializer.GetParser(1);
+            _intParser = _positionalSerializer.GetParser(0).ParserAction;
+            _doubleParser = _positionalSerializer.GetParser(1).ParserAction;
         }
         
         [Benchmark(Baseline = true)]
