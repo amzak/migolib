@@ -106,6 +106,30 @@ namespace MigoLib.Tests
             process.ExitCode.Should().Be(0);
         }
 
+        [Test]
+        public async Task Should_set_bed_temperature()
+        {
+            _fakeMigo.ReplyMode(FakeMigoMode.RequestReply);
+            _fakeMigo.ReplyGCodeDone();
+
+            var process = await ExecuteCommand(_endpoint, "set temperature --bed=100")
+                .ConfigureAwait(false);
+            
+            process.ExitCode.Should().Be(0);
+        }
+
+        [Test]
+        public async Task Should_set_nozzle_temperature()
+        {
+            _fakeMigo.ReplyMode(FakeMigoMode.RequestReply);
+            _fakeMigo.ReplyGCodeDone();
+
+            var process = await ExecuteCommand(_endpoint, "set temperature --nozzle=250")
+                .ConfigureAwait(false);
+            
+            process.ExitCode.Should().Be(0);
+        }
+
         private async Task<Process> ExecuteCommand(MigoEndpoint endpoint, string command)
         {
             var process = new Process
