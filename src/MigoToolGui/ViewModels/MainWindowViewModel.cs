@@ -30,16 +30,11 @@ namespace MigoToolGui.ViewModels
         public double BedT { get; set; }
 
         [Reactive]
-        public double ZOffset { get; set; }
-        
-        [Reactive]
         public string GcodeFileName { get; set; }
         
         [Reactive]
         public string State { get; set; }
 
-        public ReactiveCommand<double, Unit> SetZOffsetCommand { get; set; }
-        
         public ReactiveCommand<string, Unit> GCodeFileSelected { get; set; }
 
         public ReactiveCommand<Unit, Unit> StartPrintCommand { get; set; }
@@ -70,6 +65,8 @@ namespace MigoToolGui.ViewModels
         
         public ManualControlViewModel ManualControl { get; }
         
+        public ZOffsetCalibrationModel ZOffsetCalibration { get; }
+        
         public MainWindowViewModel(MigoProxyService migoProxyService, ConfigProvider configProvider)
         {
             Activator = new ViewModelActivator();
@@ -84,6 +81,7 @@ namespace MigoToolGui.ViewModels
             State = "Idle";
 
             ManualControl = new ManualControlViewModel(migoProxyService);
+            ZOffsetCalibration = new ZOffsetCalibrationModel(migoProxyService);
 
             Endpoints = new ObservableCollection<MigoEndpoint>();
             NozzleTValues = new ObservableCollection<TemperaturePoint>();
@@ -95,9 +93,6 @@ namespace MigoToolGui.ViewModels
             GCodeFileSelected = ReactiveCommand.CreateFromTask(
                 (Func<string, Task>)OnGCodeFileSelected);
 
-            SetZOffsetCommand = ReactiveCommand.CreateFromTask(
-                (Func<double, Task>)SetZOffset);
-            
             var canStartPrint = this
                 .WhenAnyValue(model => model.GcodeFileName)
                 .Select(x => !string.IsNullOrEmpty(x))
@@ -176,10 +171,7 @@ namespace MigoToolGui.ViewModels
 
         private Task StopPrint() 
             => _migoProxyService.StopPrint();
-
-        private Task SetZOffset(double offset) 
-            => _migoProxyService.SetZOffset(offset);
-
+        
         private async Task OnGCodeFileSelected(string fileName)
         {
             GcodeFileName = fileName;
@@ -208,10 +200,6 @@ namespace MigoToolGui.ViewModels
         {
             SubscribeOnStateStream();
             SubscribeOnProgressStream();
-
-            Observable.StartAsync(_migoProxyService.GetZOffset, RxApp.TaskpoolScheduler)
-                .ObserveOn(RxApp.MainThreadScheduler)
-                .Subscribe(model => InitialZOffsetValue(model.ZOffset));
         }
 
         private void SubscribeOnProgressStream()
@@ -252,7 +240,5 @@ namespace MigoToolGui.ViewModels
 
             throw ex;
         }
-
-        private void InitialZOffsetValue(double zOffset) => ZOffset = zOffset;
     }
 }
