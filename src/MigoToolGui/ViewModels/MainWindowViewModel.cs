@@ -19,8 +19,6 @@ namespace MigoToolGui.ViewModels
     {
         public ViewModelActivator Activator { get; }
 
-        private readonly DateTime _startedAt;
-        
         private readonly MigoProxyService _migoProxyService;
         private readonly ConfigProvider _configProvider;
         private readonly CancellationTokenSource _cancellationTokenSource;
@@ -76,7 +74,6 @@ namespace MigoToolGui.ViewModels
         {
             Activator = new ViewModelActivator();
 
-            _startedAt = DateTime.Now;
             _cancellationTokenSource = new CancellationTokenSource();
             _migoProxyService = migoProxyService;
             _configProvider = configProvider;
@@ -239,8 +236,8 @@ namespace MigoToolGui.ViewModels
                 {
                     NozzleT = state.NozzleTemp;
                     BedT = state.BedTemp;
-                    var nozzlePoint = new TemperaturePoint(DateTime.Now.Subtract(_startedAt), state.NozzleTemp);
-                    var bedPoint = new TemperaturePoint(DateTime.Now.Subtract(_startedAt), state.BedTemp);
+                    var nozzlePoint = new TemperaturePoint(DateTime.Now.TimeOfDay, state.NozzleTemp);
+                    var bedPoint = new TemperaturePoint(DateTime.Now.TimeOfDay, state.BedTemp);
                     NozzleTValues.Add(nozzlePoint);
                     BedTValues.Add(bedPoint);
                 }, IgnoreTaskCancelledException);

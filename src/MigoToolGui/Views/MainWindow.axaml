@@ -12,7 +12,9 @@
         x:Class="MigoToolGui.Views.MainWindow"
         Title="MigoToolGui"
         Padding="10"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        BorderThickness="1"
+        BorderBrush="Gray">
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
@@ -113,20 +115,26 @@
         <oxy:Plot
             Height="350"
             Margin="0, 10,0, 10"
-            PlotMargins="50 0 0 0"
-            LegendTextColor="White"
-            LegendBackground="Black"
+            PlotMargins="50 0 0 30"
             PlotAreaBorderColor="#555555"
-            PlotAreaBackground="#000000">
-            <oxy:Plot.Axes>
+            PlotAreaBackground="#000000"
+            Background="Black"
+            TextColor="White"
+            TitleColor="White"
+            >
+            <oxy:Plot.Axes >
                 <oxy:TimeSpanAxis
                     Position="Bottom"
-                    StringFormat="mm:ss"
+                    StringFormat="hh:mm"
                     MinimumRange="600"
+                    MaximumRange="600"
                     Title="Time"
                     TickStyle="Outside"
-                    MajorStep="60"
-                    MinorStep="10"/>
+                    AxislineColor="White"
+                    TextColor="White"
+                    TicklineColor="White"
+                    MajorStep="300"
+                    MinorStep="30"/>
                 <oxy:LinearAxis Position="Left" Minimum="0" Maximum="300" Title="Temperature"/>
             </oxy:Plot.Axes>
             <oxy:Plot.Series>
@@ -146,7 +154,7 @@
         </oxy:Plot>
         
         <TabControl>
-            <TabItem Header="Print job" >
+            <TabItem Header="Print" >
                 <StackPanel Orientation="Vertical" Margin="0, 5">
                     <StackPanel Orientation="Horizontal">
                         <Button
