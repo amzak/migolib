@@ -38,5 +38,9 @@
       <DependentUpon>ManualControl.axaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Views\ZOffsetCalibrationView.axaml.cs">
+      <DependentUpon>ZOffsetCalibrationView.axaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
 </Project>

@@ -31,6 +31,12 @@ namespace MigoLib.Scenario
 
             foreach (var (x, y) in points)
             {
+                if (token.IsCancellationRequested)
+                {
+                    _logger.LogInformation($"Scenario aborted.");
+                    yield break;
+                }
+                
                 _logger.LogInformation($"Moving to ({x},{y})");
                 await MoveTo(x, y, 10).ConfigureAwait(false);
                 var z = zOffset.ZOffset;

@@ -95,5 +95,14 @@ namespace MigoToolGui.Domain
         public Task ExecuteGCode(string[] lines) => _migo.ExecuteGCode(lines);
 
         public Task ExecuteGCode(string line) => _migo.ExecuteGCode(new [] {line});
+
+        public Task MoveToZOffset(double zOffset) => _migo.SetCurrentPosition(50, 50, zOffset);
+
+        public IAsyncEnumerable<BedLevelingCalibrationResult> StartZOfsetCalibration(CancellationToken token)
+        {
+            var logger = _loggerFactory.CreateLogger<BedLevelingCalibration>();
+            var scenario = new BedLevelingCalibration(logger, _migo, BedLevelingCalibrationMode.FivePoints);
+            return scenario.Execute(token);
+        }
     }
 }

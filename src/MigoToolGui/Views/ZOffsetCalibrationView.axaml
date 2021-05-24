@@ -8,25 +8,60 @@
         <vm:ZOffsetCalibrationModel/>
     </Design.DataContext>
     
-    <StackPanel Orientation="Horizontal">
-        <Button
-            Command="{Binding SetZOffsetCommand}"
-            CommandParameter="{Binding ZOffset}"
-            Width="150" 
-            Margin="5,0" 
-            VerticalAlignment="Stretch"
-            HorizontalContentAlignment="Center">Set</Button>
-        <TextBlock 
-            VerticalAlignment="Stretch"
-            Margin="0,5,0,0">Z offset</TextBlock>
-        <NumericUpDown 
-            Margin="5,0"
-            Minimum="-10.0"
-            Maximum="10.0"
-            Increment="0.05"
-            FormatString="0.00"
-            VerticalAlignment="Stretch"
-            Value="{Binding ZOffset}"></NumericUpDown>
+    <StackPanel Orientation="Vertical">
+        <StackPanel Orientation="Horizontal">
+            <TextBlock 
+                VerticalAlignment="Center"
+                Margin="0,5,0,0">Z offset</TextBlock>
+            <NumericUpDown 
+                Margin="5,5,0,0"
+                Minimum="-10.0"
+                Maximum="10.0"
+                Increment="0.05"
+                FormatString="0.00"
+                VerticalAlignment="Stretch"
+                Value="{Binding ZOffset}"></NumericUpDown>
+            <Button
+                Command="{Binding SetZOffsetCommand}"
+                CommandParameter="{Binding ZOffset}"
+                Width="150" 
+                Margin="5,5,0,0" 
+                HorizontalContentAlignment="Center"
+                ToolTip.Tip="Be aware! After changing z offset, Migo may (or may not) perform bed auto-leveling before the first print"
+                >Set</Button>
+            <Button
+                Width="150" 
+                Margin="5,5,0,0" 
+                HorizontalContentAlignment="Center"
+                Command="{Binding MoveToZOffsetCommand}"
+                ToolTip.Tip="Moves nozzle to point (50, 50, zOffset)"
+                >Move to Z offset</Button>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal">
+            <TextBlock 
+                VerticalAlignment="Center"
+                Margin="0,5,0,0">Manual calibration method</TextBlock>
+            <ComboBox 
+                Width="150" 
+                Margin="5,5,0,0"
+                Items="{Binding CalibrationModes}"
+                SelectedItem="{Binding CalibrationMode}"
+                >
+            </ComboBox>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal">
+            <Button
+                Margin="0,5,0,0"
+                Command="{Binding StartCalibrationCommand}"
+                >Start calibration</Button>
+            <Button
+                Margin="5,5,0,0"
+                Command="{Binding CalibrateNextCommand}"
+                >Next point</Button>
+            <Button
+                Margin="5,5,0,0"
+                Command="{Binding StopCalibrationCommand}"
+                >Stop calibration</Button>
+        </StackPanel>
     </StackPanel>
-    
 </UserControl>
