@@ -17,6 +17,8 @@ namespace MigoToolGui.ViewModels
         [Reactive]
         public double StepSize { get; set; }
         
+        public double NegStepSize => -StepSize;
+
         [Reactive]
         public double NozzleT { get; set; }
         
@@ -63,20 +65,33 @@ namespace MigoToolGui.ViewModels
             ResetBedT = ReactiveCommand.CreateFromTask(DoResetBedT);
         }
 
-        private Task DoHomeXY() 
-            => _service.ExecuteGCode(new[] {"G28 X0 Y0"});
-        
+        private Task DoHomeXY()
+        {
+            var lines = new[] {"G28 X0 Y0"};
+            return _service.ExecuteGCode(lines);
+        }
+
         private Task DoHomeZ() 
             => _service.ExecuteGCode(new[] {"G28 Z0"});
 
-        private Task DoMoveX(double delta) 
-            => _service.ExecuteGCode($"G0 F1000 X{delta.ToString("#.###")}");
+        private Task DoMoveX(double delta)
+            => DoMove("X", delta);
+
+        private Task DoMove(string axis, double delta)
+        {
+            var lines = new []
+            {
+                $"G92 {axis}0",
+                $"G0 F200 {axis}{delta.ToString("#.###")}"
+            };
+            return _service.ExecuteGCode(lines);
+        }
 
         private Task DoMoveY(double delta)
-            => _service.ExecuteGCode($"G0 F1000 Y{delta.ToString("#.###")}");
+            => DoMove("Y", delta);
         
         private Task DoMoveZ(double delta)
-            => _service.ExecuteGCode($"G0 F100 Z{delta.ToString("#.###")}");
+            => DoMove("Z", delta);
         
         private Task DoSetNozzleT(double temp)
             => _service.ExecuteGCode(new []
