@@ -105,14 +105,14 @@ namespace MigoToolGui.ViewModels
         {
             if (_iterator != null)
             {
-                await _iterator.MoveNextAsync().ConfigureAwait(false);
+                CanContinue = await _iterator.MoveNextAsync().ConfigureAwait(false);
             }
         }
 
         private Task StopCalibration()
         {
             _cts?.Cancel();
-            return Task.CompletedTask;
+            return CalibrateNext();
         }
     }
 }

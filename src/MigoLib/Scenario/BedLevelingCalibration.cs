@@ -27,7 +27,12 @@ namespace MigoLib.Scenario
             _logger.LogInformation("Home X&Y");
 
             ZOffsetModel zOffset = await _migo.GetZOffset().ConfigureAwait(false);
+            
+            await SetSpeed().ConfigureAwait(false);
             await HomeXY().ConfigureAwait(false);
+            await HomeZ().ConfigureAwait(false);
+
+            await MoveTo(0, 0, 10).ConfigureAwait(false);
 
             foreach (var (x, y) in points)
             {
@@ -56,7 +61,11 @@ namespace MigoLib.Scenario
             _logger.LogInformation($"Scenario completed.");
         }
 
+        private Task SetSpeed() => ExecuteGCode("G0 F400");
+
         private Task HomeXY() => ExecuteGCode("G28 X0 Y0");
+
+        private Task HomeZ() => ExecuteGCode("G28 Z0");
 
         private Task ExecuteGCode(string gcode)
         {
@@ -76,11 +85,11 @@ namespace MigoLib.Scenario
             switch (calibrationMode)
             {
                 case BedLevelingCalibrationMode.FivePoints:
-                    yield return (20, 20);
-                    yield return (80, 20);
+                    yield return (10, 10);
+                    yield return (90, 10);
                     yield return (50, 50);
-                    yield return (20, 80);
-                    yield return (80, 80);
+                    yield return (10, 90);
+                    yield return (90, 90);
                     break;
                 case BedLevelingCalibrationMode.NinePoints:
                     yield return (20, 20);
