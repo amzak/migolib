@@ -30,7 +30,7 @@ namespace MigoLib
         private readonly object _requestsRepliesLock;
         private readonly List<RequestReply> _requestsReplies;
 
-        private Task _socketReadingTask;
+        private bool _socketReadingStarted;
 
         private readonly SemaphoreSlim _socketReadSemaphore;
         private readonly SemaphoreSlim _connectionCheckSemaphore;
@@ -284,7 +284,7 @@ namespace MigoLib
 
             try
             {
-                if (_socketReadingTask != null && (!_socketReadingTask.IsCompleted && !_socketReadingTask.IsCanceled))
+                if (_socketReadingStarted)
                 {
                     _logger.LogDebug("socket reading in progress");
                     return;
@@ -295,8 +295,7 @@ namespace MigoLib
                     throw new InvalidOperationException("Should not be here");
                 }
             
-                _socketReadingTask = ReadSocketAsyncSafe();
-                Task.Run(() => _socketReadingTask);
+                Task.Run(ReadSocketAsyncSafe);
                 _logger.LogDebug("run ReadSocketAsync()");
             }
             finally
@@ -309,6 +308,7 @@ namespace MigoLib
         {
             try
             {
+                _socketReadingStarted = true;
                 await ReadSocketAsync().ConfigureAwait(false);
             }
             catch (SocketException ex)
@@ -318,8 +318,12 @@ namespace MigoLib
                     _logger.LogDebug("socket reading stopped because operation aborted");
                     return;
                 }
-                        
+
                 throw;
+            }
+            finally
+            {
+                _socketReadingStarted = false;
             }
         }
 
