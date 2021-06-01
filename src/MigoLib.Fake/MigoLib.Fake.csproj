@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <SelfContained>true</SelfContained>
+        <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\MigoLib\MigoLib.csproj" />
+    </ItemGroup>
+
+</Project>

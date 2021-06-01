@@ -2,9 +2,10 @@
 
     <PropertyGroup>
         <TargetFramework>net5.0</TargetFramework>
-        <IsPackable>false</IsPackable>
         <AssemblyName>MigoLib.Tests</AssemblyName>
         <RootNamespace>MigoLib.Tests</RootNamespace>
+        <SelfContained>true</SelfContained>
+        <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
     </PropertyGroup>
 
     <ItemGroup>
@@ -20,6 +21,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\MigoLib\MigoLib.csproj" />
+      <ProjectReference Include="..\MigoLib.Fake\MigoLib.Fake.csproj" />
       <ProjectReference Include="..\MigoToolCli\MigoToolCli.csproj" />
     </ItemGroup>
 

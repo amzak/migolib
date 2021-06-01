@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -12,7 +11,7 @@ using Microsoft.Extensions.Logging;
 using MigoLib.CurrentPosition;
 using MigoLib.State;
 
-namespace MigoLib.Tests
+namespace MigoLib.Fake
 {
     public class FakeMigo
     {

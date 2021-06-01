@@ -3,7 +3,7 @@ using Avalonia;
 using Avalonia.Logging;
 using Avalonia.ReactiveUI;
 using Microsoft.Extensions.Logging;
-using MigoLib.Tests;
+using MigoLib.Fake;
 using MigoToolGui.Domain;
 using MigoToolGui.ViewModels;
 using ReactiveUI;

@@ -1,6 +1,6 @@
 using System;
 
-namespace MigoLib.Tests
+namespace MigoLib.Fake
 {
     [Flags]
     public enum FakeMigoMode

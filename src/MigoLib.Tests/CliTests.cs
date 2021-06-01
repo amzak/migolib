@@ -3,6 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using MigoLib.Fake;
 using NUnit.Framework;
 using Serilog;
 

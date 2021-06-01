@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using MigoLib.Fake;
 using NUnit.Framework;
 
 namespace MigoLib.Tests

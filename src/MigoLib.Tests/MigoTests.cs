@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using MigoLib.CurrentPosition;
+using MigoLib.Fake;
 using MigoLib.State;
 using NUnit.Framework;
 

@@ -1,7 +1,8 @@
 using System;
+using System.IO;
 using MigoLib.State;
 
-namespace MigoLib.Tests
+namespace MigoLib.Fake
 {
     public static class Some
     {
@@ -24,5 +25,8 @@ namespace MigoLib.Tests
                 HeadX = 0,
                 HeadY = 0
             };
+        
+        public static string GCodeFile = "Resources/3DBenchy.gcode";
+        public static string GCodeFileName = Path.GetFileName(GCodeFile);
     }
 }

@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+    <SelfContained>true</SelfContained>
     <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
   </PropertyGroup>
   <ItemGroup>
@@ -26,7 +27,7 @@
     <PackageReference Include="System.Linq.Async" Version="5.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MigoLib.Tests\MigoLib.Tests.csproj" />
+    <ProjectReference Include="..\MigoLib.Fake\MigoLib.Fake.csproj" />
     <ProjectReference Include="..\MigoLib\MigoLib.csproj" />
   </ItemGroup>
   <ItemGroup>

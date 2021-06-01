@@ -1,6 +1,6 @@
 using MigoLib.State;
 
-namespace MigoLib.Tests
+namespace MigoLib.Fake
 {
     internal static class FakeReplies
     {
