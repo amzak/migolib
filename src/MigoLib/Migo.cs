@@ -23,12 +23,11 @@ namespace MigoLib
         public Migo(ILoggerFactory loggerFactory, MigoEndpoint endpoint)
         {   
             _logger = loggerFactory.CreateLogger<Migo>();
-            var rwLogger = loggerFactory.CreateLogger<MigoReaderWriter>();
 
             var (ip, port) = endpoint;
             var endPoint = new IPEndPoint(ip, port);
             
-            _readerWriter = new MigoReaderWriter(endPoint, rwLogger);
+            _readerWriter = new MigoReaderWriter(endPoint, loggerFactory);
         }
 
         public async Task<ZOffsetModel> SetZOffset(double zOffset)
@@ -198,7 +197,7 @@ namespace MigoLib
         
         public void Dispose()
         {
-            _readerWriter.Dispose();
+            _readerWriter?.Dispose();
         }
     }
 }
