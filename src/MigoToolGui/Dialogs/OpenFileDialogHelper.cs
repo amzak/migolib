@@ -70,7 +70,7 @@ namespace MigoToolGui.Dialogs
                 };
                 var files = await openFileDialog.ShowAsync(desktop.MainWindow);
 
-                if (files.Length != 1)
+                if (files?.Length != 1)
                 {
                     return;
                 }
