@@ -190,7 +190,7 @@ namespace MigoLib.Fake
 
             _log.LogInformation($"sending {reply} to {endPoint}...");
             await stream.WriteAsync(bytes).ConfigureAwait(false);
-            _log.LogInformation($"sent {reply} to {endPoint}");
+            _log.LogInformation($"sent");
         }
 
         private Task HandleImmediateReply(NetworkStream stream) => WriteReply(stream, _fixedReply);
