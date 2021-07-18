@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using MigoLib.Socket;
 
 namespace MigoLib
 {
@@ -21,7 +22,7 @@ namespace MigoLib
 
         private readonly IPEndPoint _endPoint;
         private readonly ILogger<MigoReaderWriter> _logger;
-        private SafeSocket _socket;
+        private readonly SafeSocket _socket;
         private readonly Pipe _pipe;
         private Memory<byte> _buffer;
 
@@ -66,27 +67,34 @@ namespace MigoLib
         {
             _logger.LogDebug($"started socket reader... {_socket.EndPoint}");
 
-            while (true)
+            try
             {
-                _buffer = _pipe.Writer.GetMemory(BufferSize);
-
-                _logger.LogDebug($"reading from socket...{_socket.EndPoint}");
-
-                int bytesRead = await _socket.ReceiveAsync(_buffer)
-                    .ConfigureAwait(false);
-
-                if (bytesRead == 0)
+                while (true)
                 {
-                    _logger.LogDebug("socket returned zero bytes");
-                    break;
+                    _buffer = _pipe.Writer.GetMemory(BufferSize);
+
+                    _logger.LogDebug($"reading from socket...{_socket.EndPoint}");
+                
+                    int bytesRead = await _socket.ReceiveAsync(_buffer)
+                        .ConfigureAwait(false);
+
+                    if (bytesRead == 0)
+                    {
+                        _logger.LogDebug("socket returned zero bytes");
+                        break;
+                    }
+
+                    _logger.LogDebug("socket reader received {bytesRead} bytes", bytesRead.ToString());
+
+                    _pipe.Writer.Advance(bytesRead);
+
+                    await _pipe.Writer.FlushAsync()
+                        .ConfigureAwait(false);
                 }
-
-                _logger.LogDebug("socket reader received {bytesRead} bytes", bytesRead.ToString());
-
-                _pipe.Writer.Advance(bytesRead);
-
-                await _pipe.Writer.FlushAsync()
-                    .ConfigureAwait(false);
+            }
+            catch (SafeSocketException socketException)
+            {
+                _logger.LogError(socketException, "No connection");
             }
 
             _logger.LogWarning($"socket reader completed {_socket.EndPoint}");

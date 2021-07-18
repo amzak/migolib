@@ -1,20 +1,17 @@
 using System;
-using System.Net.Sockets;
 
 namespace MigoLib.Socket
 {
     public class SafeSocketException : Exception
     {
-        private readonly SocketException _socketException;
-
-        public SafeSocketException(SocketException socketException)
+        public SafeSocketException(Exception exception) 
+            : base(exception.Message, exception)
         {
-            _socketException = socketException;
         }
 
-        public SafeSocketException(SocketException socketException, string message)
+        public SafeSocketException(Exception exception, string message)
+            : base(message, exception)
         {
-            throw new NotImplementedException();
         }
     }
 }
