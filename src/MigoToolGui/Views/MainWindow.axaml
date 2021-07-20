@@ -59,14 +59,15 @@
                 Command="{Binding ShowEndpointsDialogCommand}">
                 ...
             </Button>
-        </StackPanel>            
-        <StackPanel Orientation="Horizontal" Margin="0, 10, 0,0">
             <TextBlock
                 Margin="5, 0, 0,0"
-                Width="30"
+                HorizontalAlignment="Stretch"
                 TextAlignment="Right"
                 VerticalAlignment="Center"
-                Text="OK"/>
+                Foreground="{Binding ConnectionStatusColor}"
+                Text="{Binding ConnectionStatus}"/>
+        </StackPanel>            
+        <StackPanel Orientation="Horizontal" Margin="0, 10, 0,0">
             <TextBlock
                 Foreground="Gray"
                 Margin="20, 0, 0,0"
@@ -75,7 +76,7 @@
                 Text="Nozzle T"/>
             <TextBlock
                 Margin="5, 0, 0,0"
-                Width="40"
+                Width="120"
                 VerticalAlignment="Center"
                 Text="{Binding NozzleT, StringFormat=\{0:000.0\}}"/>
             

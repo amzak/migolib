@@ -9,6 +9,7 @@ using MigoLib.FileUpload;
 using MigoLib.Print;
 using MigoLib.PrinterInfo;
 using MigoLib.Scenario;
+using MigoLib.Socket;
 using MigoLib.State;
 using MigoLib.ZOffset;
 
@@ -56,6 +57,20 @@ namespace MigoToolGui.Domain
             return default!;
         }
 
+        public IAsyncEnumerable<SafeSocketStatus> GetConnectionStatusStream(CancellationToken token)
+        {
+            try
+            {
+                return _migo.GetConnectionStatusStream(token);
+            }
+            catch (TaskCanceledException _)
+            {
+                // ignore
+            }
+
+            return default!;
+        }
+
         public Task<ZOffsetModel> GetZOffset() => _migo.GetZOffset();
         
         public Task<ZOffsetModel> SetZOffset(double zOffset) 
@@ -88,7 +103,18 @@ namespace MigoToolGui.Domain
             _logger.LogDebug("created new migo connection");
         }
 
-        public Task UploadGcode(string fileName) => _migo.UploadGCodeFile(fileName);
+        public Task UploadGcode(string fileName)
+        {
+            _logger.LogInformation($"Uploading {fileName}...");
+            try
+            {
+                return _migo.UploadGCodeFile(fileName);
+            }
+            finally
+            {
+                _logger.LogInformation($"Upload of file {fileName} completed");
+            }
+        }
 
         public Task<PrinterInfoResult> GetPrinterInfo() => _migo.GetPrinterInfo();
 

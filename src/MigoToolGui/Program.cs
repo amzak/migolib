@@ -24,7 +24,7 @@ namespace MigoToolGui
             var logger = new LoggerConfiguration()
                 .WriteTo
                 .Console()
-                .MinimumLevel.Debug()
+                .MinimumLevel.Verbose()
                 .CreateLogger();
 
             var container = new StashboxContainer();

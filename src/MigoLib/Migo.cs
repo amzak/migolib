@@ -10,6 +10,7 @@ using MigoLib.FileUpload;
 using MigoLib.GCode;
 using MigoLib.Print;
 using MigoLib.PrinterInfo;
+using MigoLib.Socket;
 using MigoLib.State;
 using MigoLib.ZOffset;
 
@@ -195,6 +196,9 @@ namespace MigoLib
         public IAsyncEnumerable<FilePercentResult> GetProgressStream(CancellationToken token) 
             => _readerWriter.GetStream(Parsers.GetFilePercent, token);
         
+        public IAsyncEnumerable<SafeSocketStatus> GetConnectionStatusStream(CancellationToken token) 
+            => _readerWriter.GetConnectionStatusStream(token);
+
         public void Dispose()
         {
             _readerWriter?.Dispose();

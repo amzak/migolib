@@ -13,7 +13,7 @@ namespace MigoLib.Socket
         private const int MaxConnectAttempts = 3;
 
         public readonly IPEndPoint EndPoint;
-        
+
         private readonly TimeSpan _reconnectInterval = TimeSpan.FromSeconds(5);
         private readonly TimeSpan _socketTimeout = TimeSpan.FromSeconds(10);
 
@@ -43,6 +43,8 @@ namespace MigoLib.Socket
             _timeoutsMonitor = Task.Run(TimeoutsMonitor);
 
             _logger.LogDebug($"new socket created");
+            
+            RaiseOnConnectionStatusChange(SafeSocketStatus.Initial);
         }
 
         private async Task TimeoutsMonitor()
@@ -97,6 +99,8 @@ namespace MigoLib.Socket
                 
                 _connectAttempts = 1;
 
+                RaiseOnConnectionStatusChange(SafeSocketStatus.Connected);
+
                 return received;
             }
             catch (Exception ex) when (ex is SocketException or OperationCanceledException)
@@ -117,6 +121,8 @@ namespace MigoLib.Socket
         {
             try
             {
+                RaiseOnConnectionStatusChange(SafeSocketStatus.NotConnected(ex));
+                
                 await _socketSemaphore.WaitAsync().ConfigureAwait(false);
 
                 _connectAttempts++;
@@ -127,6 +133,8 @@ namespace MigoLib.Socket
                     await TryHandleException(ex).ConfigureAwait(false);
                 }
 
+                RaiseOnConnectionStatusChange(SafeSocketStatus.Connecting);
+
                 _logger.LogDebug("connecting socket...");
                 await _socket.ConnectAsync(EndPoint).ConfigureAwait(false);
                 _logger.LogDebug("socket connected");
@@ -136,6 +144,7 @@ namespace MigoLib.Socket
                 if (socketException.ErrorCode == 113 || // No route to host
                     socketException.ErrorCode == 111)   // Connection refused
                 {
+                    RaiseOnConnectionStatusChange(SafeSocketStatus.Dead(socketException));
                     throw new SafeSocketException(socketException);
                 }
             }
@@ -243,6 +252,13 @@ namespace MigoLib.Socket
             _socket?.Dispose();
             _socketSemaphore?.Dispose();
             _lifetimeCts.Dispose();
+        }
+
+        public event EventHandler<SafeSocketStatus> OnConnectionStatusChange;
+            
+        public void RaiseOnConnectionStatusChange(SafeSocketStatus status)
+        {
+            OnConnectionStatusChange?.Invoke(this, status);
         }
     }
 }

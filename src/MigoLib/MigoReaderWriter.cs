@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,6 +46,7 @@ namespace MigoLib
             _lifetimeCts = new CancellationTokenSource();
             
             var socketLogger = loggerFactory.CreateLogger<SafeSocket>();
+
             _socket = new SafeSocket(socketLogger, endPoint);
 
             Task.Run(Start);
@@ -251,6 +253,34 @@ namespace MigoLib
             }
 
             _logger.LogDebug($"stream of {typeof(T)} completed");
+        }
+
+        public async IAsyncEnumerable<SafeSocketStatus> GetConnectionStatusStream([EnumeratorCancellation] CancellationToken token)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(
+                _lifetimeCts.Token,
+                token);
+
+            var connectionStatusStream = new EventsStream<SafeSocketStatus>(cts.Token);
+
+            void Handler(object _, SafeSocketStatus status)
+            {
+                connectionStatusStream.SetNextEvent(status);
+            }
+
+            _socket.OnConnectionStatusChange += Handler;
+
+            try
+            {
+                await foreach (var status in connectionStatusStream)
+                {
+                    yield return status;
+                }
+            }
+            finally
+            {
+                _socket.OnConnectionStatusChange -= Handler;
+            }
         }
 
         public async Task<int> Write(IEnumerable<ReadOnlyMemory<byte>> chunks)

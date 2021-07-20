@@ -7,6 +7,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Media;
 using MigoLib;
 using MigoLib.FileUpload;
 using MigoToolGui.Domain;
@@ -17,11 +18,21 @@ namespace MigoToolGui.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase, IActivatableViewModel
     {
+        private static SolidColorBrush Green = SolidColorBrush.Parse("green");
+        private static SolidColorBrush Red = SolidColorBrush.Parse("red");
+        private static SolidColorBrush Yellow = SolidColorBrush.Parse("yellow");
+            
         public ViewModelActivator Activator { get; }
 
         private readonly MigoProxyService _migoProxyService;
         private readonly ConfigProvider _configProvider;
         private readonly CancellationTokenSource _cancellationTokenSource;
+        
+        [Reactive]
+        public string ConnectionStatus { get; set; }
+
+        [Reactive]
+        public SolidColorBrush ConnectionStatusColor { get; set; } 
 
         [Reactive]
         public double NozzleT { get; set; }
@@ -66,7 +77,7 @@ namespace MigoToolGui.ViewModels
         public ManualControlViewModel ManualControl { get; }
         
         public ZOffsetCalibrationModel ZOffsetCalibration { get; }
-        
+
         public MainWindowViewModel(MigoProxyService migoProxyService, ConfigProvider configProvider)
         {
             Activator = new ViewModelActivator();
@@ -200,6 +211,21 @@ namespace MigoToolGui.ViewModels
         {
             SubscribeOnStateStream();
             SubscribeOnProgressStream();
+            SubscribeOnConnectionStream();
+        }
+
+        private void SubscribeOnConnectionStream()
+        {
+            _migoProxyService.GetConnectionStatusStream(_cancellationTokenSource.Token)
+                .ToObservable()
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(status =>
+                {
+                    ConnectionStatus = status.Message;
+
+                    ConnectionStatusColor = status.IsConnected
+                        ? Green : status.IsDead ? Red : Yellow;
+                }, IgnoreTaskCancelledException);
         }
 
         private void SubscribeOnProgressStream()
