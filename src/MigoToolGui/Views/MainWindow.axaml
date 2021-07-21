@@ -122,13 +122,13 @@
             Background="Black"
             TextColor="White"
             TitleColor="White"
-            >
+        >
             <oxy:Plot.Axes >
                 <oxy:TimeSpanAxis
                     Position="Bottom"
                     StringFormat="hh:mm"
                     MinimumRange="600"
-                    MaximumRange="600"
+                    MaximumRange="3600"
                     Title="Time"
                     TickStyle="Outside"
                     AxislineColor="White"
@@ -136,7 +136,13 @@
                     TicklineColor="White"
                     MajorStep="300"
                     MinorStep="30"/>
-                <oxy:LinearAxis Position="Left" Minimum="0" Maximum="300" Title="Temperature"/>
+                <oxy:LinearAxis 
+                    Position="Left" 
+                    AbsoluteMinimum="0"
+                    AbsoluteMaximum="400" 
+                    MinimumRange="100" 
+                    MaximumRange="400" 
+                    Title="Temperature"/>
             </oxy:Plot.Axes>
             <oxy:Plot.Series>
                 <oxy:LineSeries

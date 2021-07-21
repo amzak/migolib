@@ -18,6 +18,8 @@ namespace MigoToolGui.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase, IActivatableViewModel
     {
+        private const int PointsBufferSize = 60;
+        
         private static SolidColorBrush Green = SolidColorBrush.Parse("green");
         private static SolidColorBrush Red = SolidColorBrush.Parse("red");
         private static SolidColorBrush Yellow = SolidColorBrush.Parse("yellow");
@@ -254,6 +256,12 @@ namespace MigoToolGui.ViewModels
                     var bedPoint = new TemperaturePoint(DateTime.Now.TimeOfDay, state.BedTemp);
                     NozzleTValues.Add(nozzlePoint);
                     BedTValues.Add(bedPoint);
+
+                    if (NozzleTValues.Count > PointsBufferSize)
+                    {
+                        NozzleTValues.RemoveAt(0);
+                        BedTValues.RemoveAt(0);
+                    }
                 }, IgnoreTaskCancelledException);
         }
 
