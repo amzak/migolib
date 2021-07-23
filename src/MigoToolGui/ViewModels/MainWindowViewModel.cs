@@ -18,7 +18,7 @@ namespace MigoToolGui.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase, IActivatableViewModel
     {
-        private const int PointsBufferSize = 60;
+        private const int PointsBufferSize = 3600;
         
         private static SolidColorBrush Green = SolidColorBrush.Parse("green");
         private static SolidColorBrush Red = SolidColorBrush.Parse("red");
