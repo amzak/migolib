@@ -179,7 +179,7 @@ namespace MigoToolGui.ViewModels
             State = "Uploading...";
             await _migoProxyService.UploadGcode(GcodeFileName);
             State = "Preparing for new print...";
-            await _migoProxyService.PreheatAndPrint(GcodeFileName, PreheatTemperature);
+            await _migoProxyService.PreheatAndPrint(GcodeFileName, PreheatEnabled ? PreheatTemperature : default);
 
             var printerInfo = await _migoProxyService.GetPrinterInfo();
             State = printerInfo.StatedDescription;

@@ -81,7 +81,7 @@ namespace MigoToolGui.Domain
             _tokenSource.Cancel();
         }
 
-        public Task<StartPrintResult> PreheatAndPrint(string filePath, double preheatTemperature)
+        public Task<StartPrintResult> PreheatAndPrint(string filePath, double? preheatTemperature)
         {
             var fileName = Path.GetFileName(filePath);
             var logger = _loggerFactory.CreateLogger<PreheatAndPrint>();
