@@ -7,9 +7,11 @@ using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MigoLib.Scenario;
+using MigoLib.Socket;
 using MigoToolGui.Domain;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
+using Serilog;
 
 namespace MigoToolGui.ViewModels
 {
@@ -75,7 +77,7 @@ namespace MigoToolGui.ViewModels
         {
             Observable.StartAsync(_migoProxyService.GetZOffset, RxApp.TaskpoolScheduler)
                 .ObserveOn(RxApp.MainThreadScheduler)
-                .Subscribe(model => InitialZOffsetValue(model.ZOffset));
+                .Subscribe(model => InitialZOffsetValue(model.ZOffset), OnError);
 
             var canContinue = this.WhenAnyValue(x => x.CanContinue)
                 .Select(x => x)
@@ -83,6 +85,16 @@ namespace MigoToolGui.ViewModels
 
             StartCalibrationCommand = ReactiveCommand.CreateFromTask(StartCalibration);
             CalibrateNextCommand = ReactiveCommand.CreateFromTask(CalibrateNext, canContinue);
+        }
+
+        private void OnError(Exception ex)
+        {
+            if (ex is not SafeSocketException safeSocketException)
+            {
+                return;
+            }
+            
+            Log.Error(safeSocketException, "No connection");
         }
 
         private Task SetZOffset(double offset) 
