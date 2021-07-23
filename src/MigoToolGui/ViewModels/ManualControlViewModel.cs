@@ -18,13 +18,7 @@ namespace MigoToolGui.ViewModels
         public double StepSize { get; set; }
         
         public double NegStepSize => -StepSize;
-
-        [Reactive]
-        public double NozzleT { get; set; }
         
-        [Reactive]
-        public double BedT { get; set; }
-
         public ReactiveCommand<Unit, Unit> HomeXY { get; set; }
         public ReactiveCommand<Unit, Unit> HomeZ { get; set; }
         
@@ -32,20 +26,12 @@ namespace MigoToolGui.ViewModels
         public ReactiveCommand<double, Unit> MoveY { get; set; }
         public ReactiveCommand<double, Unit> MoveZ { get; set; }
         
-        public ReactiveCommand<double, Unit> SetNozzleT { get; set; }
-        public ReactiveCommand<double, Unit> SetBedT { get; set; }
-        
-        public ReactiveCommand<Unit, Unit> ResetNozzleT { get; set; }
-        public ReactiveCommand<Unit, Unit> ResetBedT { get; set; }
-
         public ManualControlViewModel(MigoProxyService service)
         {
             _service = service;
             Activator = new ViewModelActivator();
             
             StepSize = 5;
-            BedT = 110;
-            NozzleT = 235;
             
             this.WhenActivated(OnActivated);
         }
@@ -58,11 +44,6 @@ namespace MigoToolGui.ViewModels
             MoveX = ReactiveCommand.CreateFromTask((Func<double, Task>)DoMoveX);
             MoveY = ReactiveCommand.CreateFromTask((Func<double, Task>)DoMoveY);
             MoveZ = ReactiveCommand.CreateFromTask((Func<double, Task>)DoMoveZ);
-            
-            SetNozzleT = ReactiveCommand.CreateFromTask((Func<double, Task>)DoSetNozzleT);
-            SetBedT = ReactiveCommand.CreateFromTask((Func<double, Task>)DoSetBedT);
-            ResetNozzleT = ReactiveCommand.CreateFromTask(DoResetNozzleT);
-            ResetBedT = ReactiveCommand.CreateFromTask(DoResetBedT);
         }
 
         private Task DoHomeXY()
@@ -92,21 +73,5 @@ namespace MigoToolGui.ViewModels
         
         private Task DoMoveZ(double delta)
             => DoMove("Z", delta);
-        
-        private Task DoSetNozzleT(double temp)
-            => _service.ExecuteGCode(new []
-            {
-                "M106 S255",
-                $"M104 S{temp.ToString("#")}"
-            });
-        
-        private Task DoResetNozzleT()
-            => _service.ExecuteGCode("M104 S0");
-        
-        private Task DoSetBedT(double temp)
-            => _service.ExecuteGCode($"M140 S{temp.ToString("#")}");
-        
-        private Task DoResetBedT()
-            => _service.ExecuteGCode("M140 S0");
     }
 }

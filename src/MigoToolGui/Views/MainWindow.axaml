@@ -213,8 +213,11 @@
                     </StackPanel>
                 </StackPanel>
             </TabItem>
-            <TabItem Header="Manual control">
+            <TabItem Header="Head">
                 <views:ManualControlView DataContext="{Binding ManualControl}"/>
+            </TabItem>
+            <TabItem Header="Extruder">
+                <views:ExtruderControlView DataContext="{Binding ExtruderControl}"/>
             </TabItem>
             <TabItem Header="Z offset calibration">
                 <views:ZOffsetCalibrationView DataContext="{Binding ZOffsetCalibration}"/>

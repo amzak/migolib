@@ -43,5 +43,9 @@
       <DependentUpon>ZOffsetCalibrationView.axaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Views\ExtruderlControlView.axaml.cs">
+      <DependentUpon>ExtruderlControlView.axaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
 </Project>

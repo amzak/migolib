@@ -80,6 +80,8 @@ namespace MigoToolGui.ViewModels
         
         public ZOffsetCalibrationModel ZOffsetCalibration { get; }
 
+        public ExtruderControlViewModel ExtruderControl { get; }
+        
         public MainWindowViewModel(MigoProxyService migoProxyService, ConfigProvider configProvider)
         {
             Activator = new ViewModelActivator();
@@ -95,6 +97,7 @@ namespace MigoToolGui.ViewModels
 
             ManualControl = new ManualControlViewModel(migoProxyService);
             ZOffsetCalibration = new ZOffsetCalibrationModel(migoProxyService);
+            ExtruderControl = new ExtruderControlViewModel(migoProxyService);
 
             Endpoints = new ObservableCollection<MigoEndpoint>();
             NozzleTValues = new ObservableCollection<TemperaturePoint>();
