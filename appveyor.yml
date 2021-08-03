@@ -1,0 +1,20 @@
+version: 1.0.{build}
+
+image: Ubuntu
+
+configuration: Release
+
+build_script:
+  - dotnet publish -c Release src
+
+after_build:
+  - ls build/bin/MigoToolGui/net5.0/linux-x64/publish
+  - 7z a gui-release-linux-x64.zip $APPVEYOR_BUILD_FOLDER/build/bin/MigoToolGui/net5.0/linux-x64/publish
+
+test:
+  assemblies:
+    - build/bin/MigoLib.Tests/net5.0/**/*.Tests.dll
+
+artifacts:
+  - path: gui-release-linux-x64.zip
+    name: MigoLib
