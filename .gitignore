@@ -1,4 +1,6 @@
 build/
+bin/
+Dumps/
 */**/BenchmarkDotNet.Artifacts/
 /src/.idea/
 *.DotSettings
