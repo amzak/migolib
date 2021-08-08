@@ -1,0 +1,27 @@
+name: build linux
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+    - name: Install dependencies
+      run: dotnet restore src
+    - name: Build
+      run: dotnet publish src
+    - name: Test with the dotnet CLI
+      run: dotnet test src
+    - name: Upload dotnet test results
+      uses: actions/upload-artifact@v2
+      with:
+        name: dotnet-results-${{ matrix.dotnet-version }}
+        path: build/bin/MigoToolGui/net5.0/linux-x64/publish/
+        if-no-files-found: error
