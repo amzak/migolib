@@ -6,8 +6,8 @@ namespace MigoLib.Print
         {
             serializer
                 .Switch(
-                    ("printstartsuccess", x => x.Success, true), 
-                    ("printstartfailed", x => x.Success, false)
+                    ("printstartsuccess", x => x.PrintStarted, true), 
+                    ("printstartfailed", x => x.PrintStarted, false)
                 )
                 .Skip(1); // skip "fn:(.*)***.gcode"
         }
