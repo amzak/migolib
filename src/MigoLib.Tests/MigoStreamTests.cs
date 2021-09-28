@@ -12,13 +12,9 @@ namespace MigoLib.Tests
     [TestFixture]
     public class MigoStreamTests
     {
-        private const string Ip = "127.0.0.1";
-        private const ushort Port = 5100;
-
-        private const int TestStreamSize = 10; 
+        private const int ExpectedStreamSize = 10; 
         
         private Migo _migo;
-        private FakeMigo _fakeMigo;
         private CancellationTokenSource _tokenSource;
         private ILogger<MigoStreamTests> _logger;
 
@@ -27,19 +23,16 @@ namespace MigoLib.Tests
         {
             _logger = Init.LoggerFactory.CreateLogger<MigoStreamTests>();
             var logger = Init.LoggerFactory.CreateLogger<FakeMigo>();
-            _fakeMigo = new FakeMigo(Ip, Port, logger);
-            _fakeMigo.Start();
 
-            _fakeMigo
+            TestEnvironment.FakeMigo
                 .ReplyMode(FakeMigoMode.Stream)
-                .StreamReplyCount(TestStreamSize);
+                .StreamReplyCount(ExpectedStreamSize);
         }
 
         [SetUp]
         public void Setup()
         {
-            var endpoint = new MigoEndpoint(Ip, Port);
-            _migo = new Migo(Init.LoggerFactory, endpoint);
+            _migo = new Migo(Init.LoggerFactory, TestEnvironment.Endpoint, ErrorHandlingPolicy.Default);
             _tokenSource = new CancellationTokenSource();
         }
 
@@ -49,21 +42,15 @@ namespace MigoLib.Tests
             _migo.Dispose();
         }
         
-        [OneTimeTearDown]
-        public void OneTimeTearDown()
-        {
-            _fakeMigo.Stop();
-        }
-
         [Test]
         public async Task Should_receive_state_stream_of_known_size()
         {
             var stream = _migo.GetStateStream(_tokenSource.Token);
-            
-            var counter = await RunStreamTest(stream)
+
+            var counter = await RunStreamTest(stream, ExpectedStreamSize)
                 .ConfigureAwait(false);
 
-            counter.Should().Be(TestStreamSize);
+            counter.Should().Be(ExpectedStreamSize);
         }
 
         [Test]
@@ -71,20 +58,22 @@ namespace MigoLib.Tests
         {
             var stream = _migo.GetProgressStream(_tokenSource.Token);
             
-            var counter = await RunStreamTest(stream)
+            var counter = await RunStreamTest(stream, ExpectedStreamSize)
                 .ConfigureAwait(false);
 
-            counter.Should().Be(TestStreamSize);
+            counter.Should().Be(ExpectedStreamSize);
         }
 
-        private async Task<int> RunStreamTest<T>(IAsyncEnumerable<T> stream)
+        private async Task<int> RunStreamTest<T>(IAsyncEnumerable<T> stream, int expectedStreamSize)
         {
             int counter = 0;
             await foreach (var _ in stream)
             {
                 counter++;
+                
+                _logger.LogDebug(counter.ToString());
 
-                if (counter == TestStreamSize)
+                if (counter == expectedStreamSize)
                 {
                     _tokenSource.Cancel();
                 }
@@ -96,7 +85,7 @@ namespace MigoLib.Tests
         [Test]
         public async Task Should_stop_stream()
         {
-            _fakeMigo.StreamReplyCount(0);
+            TestEnvironment.FakeMigo.StreamReplyCount(0);
 
             _tokenSource.CancelAfter(TimeSpan.FromSeconds(1));
 

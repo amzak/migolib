@@ -13,10 +13,13 @@ namespace MigoLib.Tests
         public void SetUp()
         {
             var log = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .Enrich.FromLogContext()
+                .MinimumLevel.Verbose()
+                .Enrich
+                    .FromLogContext()
+                .Enrich
+                    .WithThreadId()
                 .WriteTo
-                    .NUnitOutput(outputTemplate: "[{Timestamp:mm:ss:fff} {Level:u3} {SourceContext}] {Message:lj}{NewLine}{Exception}")
+                    .NUnitOutput(outputTemplate: "[{Timestamp:mm:ss:fff} {Level:u3} {SourceContext} {ThreadId}] {Message:lj}{NewLine}{Exception}")
                 .CreateLogger();
             
             Log.Logger = log;

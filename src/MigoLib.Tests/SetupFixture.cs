@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace MigoLib.Tests
 {
     [SetUpFixture]
-    public class RootFixture
+    public class SetupFixture
     {
         [OneTimeSetUp]
         public void RunBeforeAnyTests()

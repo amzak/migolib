@@ -4,7 +4,6 @@
         <TargetFramework>net5.0</TargetFramework>
         <AssemblyName>MigoLib.Tests</AssemblyName>
         <RootNamespace>MigoLib.Tests</RootNamespace>
-        <SelfContained>true</SelfContained>
         <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
     </PropertyGroup>
 
@@ -14,6 +13,7 @@
         <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.8.3" />
         <PackageReference Include="Serilog" Version="2.10.0" />
+        <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
         <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
         <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
         <PackageReference Include="Serilog.Sinks.NUnit" Version="1.0.3" />

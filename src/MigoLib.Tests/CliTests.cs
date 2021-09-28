@@ -1,8 +1,7 @@
 using System.Diagnostics;
-using System.Net;
+using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using MigoLib.Fake;
 using NUnit.Framework;
 using Serilog;
@@ -12,30 +11,25 @@ namespace MigoLib.Tests
     [TestFixture]
     public class CliTests
     {
-        private MigoEndpoint _endpoint;
-        private FakeMigo _fakeMigo;
+        private long _gCodeSize;
+
+        private MigoEndpoint Endpoint => TestEnvironment.Endpoint;
 
         [OneTimeSetUp]
         public void Init()
         {
-            _endpoint = new MigoEndpoint(IPAddress.Parse("127.0.0.1"), 5100);
-            var logger = Tests.Init.LoggerFactory.CreateLogger<FakeMigo>();
-            _fakeMigo = new FakeMigo(_endpoint, logger);
-            _fakeMigo.Start();
-        }
-
-        [OneTimeTearDown]
-        public void Cleanup()
-        {
-            _fakeMigo.Stop();
+            var fileInfo = new FileInfo(MigoTests.GCodeFile);
+            _gCodeSize = fileInfo.Length + 33;
         }
         
         [Test]
         public async Task Should_set_z_offset()
         {
-            _fakeMigo.ReplyZOffset(1.0);
+            TestEnvironment.FakeMigo
+                .ReplyMode(FakeMigoMode.RequestReply)
+                .ReplyZOffset(1.0);
             
-            var process = await ExecuteCommand(_endpoint, "set zoffset 1.0")
+            var process = await ExecuteCommand(Endpoint, "set zoffset 1.0")
                 .ConfigureAwait(false);
             
             process.ExitCode.Should().Be(0);
@@ -44,9 +38,11 @@ namespace MigoLib.Tests
         [Test]
         public async Task Should_get_z_offset()
         {
-            _fakeMigo.ReplyZOffset(1.0);
+            TestEnvironment.FakeMigo
+                .ReplyMode(FakeMigoMode.RequestReply)
+                .ReplyZOffset(1.0);
             
-            var process = await ExecuteCommand(_endpoint, "get zoffset")
+            var process = await ExecuteCommand(Endpoint, "get zoffset")
                 .ConfigureAwait(false);
             
             process.ExitCode.Should().Be(0);
@@ -55,9 +51,11 @@ namespace MigoLib.Tests
         [Test]
         public async Task Should_get_state()
         {
-            _fakeMigo.ReplyState();
+            TestEnvironment.FakeMigo
+                .ReplyMode(FakeMigoMode.Stream) // state can only be responded as incoming stream
+                .StreamReplyCount(1);
             
-            var process = await ExecuteCommand(_endpoint, "get state")
+            var process = await ExecuteCommand(Endpoint, "get state")
                 .ConfigureAwait(false);
             
             process.ExitCode.Should().Be(0);
@@ -66,9 +64,11 @@ namespace MigoLib.Tests
         [Test]
         public async Task Should_execute_gcode()
         {
-            _fakeMigo.ReplyGCodeDone();
+            TestEnvironment.FakeMigo
+                .ReplyMode(FakeMigoMode.RequestReply)
+                .ReplyGCodeDone();
             
-            var process = await ExecuteCommand(_endpoint, "exec gcode \"M851\"")
+            var process = await ExecuteCommand(Endpoint, "exec gcode \"M851\"")
                 .ConfigureAwait(false);
             
             process.ExitCode.Should().Be(0);
@@ -77,9 +77,12 @@ namespace MigoLib.Tests
         [Test]
         public async Task Should_upload_gcode_file()
         {
-            _fakeMigo.ReplyUploadCompleted();
+            TestEnvironment.FakeMigo
+                .ReplyMode(FakeMigoMode.RequestReply)
+                .ReplyUploadCompleted()
+                .ExpectBytes(_gCodeSize);
             
-            var process = await ExecuteCommand(_endpoint, "exec upload \"Resources/3DBenchy.gcode\"")
+            var process = await ExecuteCommand(Endpoint, "exec upload \"Resources/3DBenchy.gcode\"")
                 .ConfigureAwait(false);
             
             process.ExitCode.Should().Be(0);
@@ -88,9 +91,11 @@ namespace MigoLib.Tests
         [Test]
         public async Task Should_start_printing_selected_file()
         {
-            _fakeMigo.ReplyPrintStarted("3DBenchy.gcode");
+            TestEnvironment.FakeMigo
+                .ReplyMode(FakeMigoMode.RequestReply)
+                .ReplyPrintStarted("3DBenchy.gcode");
 
-            var process = await ExecuteCommand(_endpoint, "exec print \"3DBenchy.gcode\"")
+            var process = await ExecuteCommand(Endpoint, "exec print \"3DBenchy.gcode\"")
                 .ConfigureAwait(false);
             
             process.ExitCode.Should().Be(0);
@@ -99,9 +104,10 @@ namespace MigoLib.Tests
         [Test]
         public async Task Should_stop_printing()
         {
-            _fakeMigo.ReplyPrintStopped();
+            TestEnvironment.FakeMigo
+                .ReplyPrintStopped();
 
-            var process = await ExecuteCommand(_endpoint, "exec stop")
+            var process = await ExecuteCommand(Endpoint, "exec stop")
                 .ConfigureAwait(false);
             
             process.ExitCode.Should().Be(0);
@@ -110,10 +116,11 @@ namespace MigoLib.Tests
         [Test]
         public async Task Should_set_bed_temperature()
         {
-            _fakeMigo.ReplyMode(FakeMigoMode.RequestReply);
-            _fakeMigo.ReplyGCodeDone();
+            TestEnvironment.FakeMigo
+                .ReplyMode(FakeMigoMode.RequestReply)
+                .ReplyGCodeDone();
 
-            var process = await ExecuteCommand(_endpoint, "set temperature --bed=100")
+            var process = await ExecuteCommand(Endpoint, "set temperature --bed=100")
                 .ConfigureAwait(false);
             
             process.ExitCode.Should().Be(0);
@@ -122,10 +129,11 @@ namespace MigoLib.Tests
         [Test]
         public async Task Should_set_nozzle_temperature()
         {
-            _fakeMigo.ReplyMode(FakeMigoMode.RequestReply);
-            _fakeMigo.ReplyGCodeDone();
+            TestEnvironment.FakeMigo
+                .ReplyMode(FakeMigoMode.RequestReply)
+                .ReplyGCodeDone();
 
-            var process = await ExecuteCommand(_endpoint, "set temperature --nozzle=250")
+            var process = await ExecuteCommand(Endpoint, "set temperature --nozzle=250")
                 .ConfigureAwait(false);
             
             process.ExitCode.Should().Be(0);
@@ -137,7 +145,7 @@ namespace MigoLib.Tests
             {
                 StartInfo = new ProcessStartInfo(
                     "dotnet", 
-                    $"run -p ../../../../src/MigoToolCli/MigoToolCli.csproj -- --endpoint={endpoint} {command}")
+                    $"run -p ../../../../../src/MigoToolCli/MigoToolCli.csproj -- --endpoint={endpoint} {command}")
                 {
                     RedirectStandardOutput = true,
                     RedirectStandardError = true

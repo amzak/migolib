@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MigoLib.CurrentPosition;
 using MigoLib.State;
+using Nito.AsyncEx;
 
 namespace MigoLib.Fake
 {
@@ -33,7 +34,7 @@ namespace MigoLib.Fake
         private long _bytesExpected;
         private int _replyCount;
         private CancellationToken _streamCancellationToken;
-
+        
         public FakeMigo(string ip, ushort port, ILogger<FakeMigo> logger)
             : this(new MigoEndpoint(ip, port), logger)
         {
@@ -50,6 +51,8 @@ namespace MigoLib.Fake
 
             _log = logger;
 
+            _log.LogDebug($"created fake migo on {endpoint}");
+            
             _streamReplies = PopulateStreamReplies()
                 .ToList();
         }
@@ -61,11 +64,25 @@ namespace MigoLib.Fake
             yield return FakeReplies.FilePercent;
         }
 
-        public void Start()
+        public async Task Start(int counter = 0)
         {
-            _tcpListener.Start();
+            if (counter > 3)
+            {
+                throw new Exception("Can't start fake migo");
+            }
 
-            Task.Run(StartListening);
+            try
+            {
+                _tcpListener.Start();
+            }
+            catch (SocketException ex) when(ex.Message.Equals("Address already in use"))
+            {
+                await Task.Delay(100).ConfigureAwait(false);
+                await Start(counter + 1).ConfigureAwait(false);
+                return;
+            }
+
+            await StartListening().ConfigureAwait(false);
         }
 
         private async Task StartListening()
@@ -77,9 +94,13 @@ namespace MigoLib.Fake
                 while (!_tokenSource.IsCancellationRequested)
                 {
                     _log.LogInformation("accepting new clients...");
-                    using var tcpClient = await _tcpListener.AcceptTcpClientAsync().ConfigureAwait(false);
+                    using TcpClient tcpClient = await _tcpListener.AcceptTcpClientAsync().ConfigureAwait(false);
                     await HandleClient(tcpClient).ConfigureAwait(false);
                 }
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "stopped after exception");
             }
             finally
             {
@@ -91,9 +112,9 @@ namespace MigoLib.Fake
 
         private async Task HandleClient(TcpClient tcpClient)
         {
-            var stream = tcpClient.GetStream();
-
             _log.LogInformation($"handling client {tcpClient.Client.LocalEndPoint} in {_mode.ToString()} mode");
+
+            var stream = tcpClient.GetStream();
 
             switch (_mode)
             {
@@ -115,7 +136,7 @@ namespace MigoLib.Fake
                     break;
             }
 
-            _log.LogInformation($"handling of client {tcpClient.Client.LocalEndPoint} completed.");
+            _log.LogInformation($"handling of client {tcpClient.Client.LocalEndPoint} in {_mode.ToString()} completed.");
         }
 
         private async Task HandleReplyRealStream(NetworkStream stream)
@@ -147,6 +168,8 @@ namespace MigoLib.Fake
                         .ConfigureAwait(false);
                 }
             }
+            
+            _log.LogDebug("stream reply completed");
         }
 
         private async Task HandleRequestReply(NetworkStream stream)
@@ -159,10 +182,14 @@ namespace MigoLib.Fake
                 _bytesExpected = 1; // at least receive smth
             }
 
+            _log.LogDebug($"expecting {_bytesExpected.ToString()} bytes");
+
             while (receivedTotal < _bytesExpected)
             {
-                var received = await stream.ReadAsync(_buffer /*, _timeoutCancellation.Token*/)
+                var received = await stream.ReadAsync(_buffer, _tokenSource.Token)
                     .ConfigureAwait(false);
+
+                _log.LogDebug($"received {received.ToString()} bytes");
 
                 if (received == 0)
                 {
@@ -171,12 +198,14 @@ namespace MigoLib.Fake
 
                 receivedTotal += received;
 
-                _receiveStream.Write(_buffer.Slice(0, received).Span);
-                _receiveStream.Flush();
+                await _receiveStream.WriteAsync(_buffer.Slice(0, received), _tokenSource.Token)
+                    .ConfigureAwait(false);
+                await _receiveStream.FlushAsync(_tokenSource.Token)
+                    .ConfigureAwait(false);
 
                 _log.LogDebug($"received {received.ToString()} total {receivedTotal.ToString()} bytes");
             }
-
+            
             await WriteReply(stream, _fixedReply)
                 .ConfigureAwait(false);
 
@@ -189,7 +218,16 @@ namespace MigoLib.Fake
             var bytes = Encoding.UTF8.GetBytes(reply);
 
             _log.LogInformation($"sending {reply} to {endPoint}...");
-            await stream.WriteAsync(bytes).ConfigureAwait(false);
+            try
+            {
+                await stream.WriteAsync(bytes, _tokenSource.Token).ConfigureAwait(false);
+                await stream.FlushAsync(_tokenSource.Token).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
             _log.LogInformation($"sent");
         }
 
@@ -248,7 +286,7 @@ namespace MigoLib.Fake
             return hash;
         }
 
-        public void ReplyFilePercent(int percent)
+        public FakeMigo ReplyFilePercent(int percent)
             => FixReply($"@#filepercent:{percent.ToString()}#@");
 
         public FakeMigo ExpectBytes(long size)
@@ -257,23 +295,24 @@ namespace MigoLib.Fake
             return this;
         }
 
-        public void StreamReplyCount(int count)
+        public FakeMigo StreamReplyCount(int count)
         {
             _replyCount = count;
+            return this;
         }
 
-        public void ReplyPrintStarted(string fileName)
+        public FakeMigo ReplyPrintStarted(string fileName)
             => FixReply($"@#printstartsuccess;fn:{fileName}#@");
 
-        public void ReplyPrintFailed(string fileName)
+        public FakeMigo ReplyPrintFailed(string fileName)
             => FixReply($"@#printstartfailed;fn:{fileName}#@");
 
-        public void ReplyPrintStopped() => FixReply("@#stopped;#@");
+        public FakeMigo ReplyPrintStopped() => FixReply("@#stopped;#@");
 
-        public void ReplyPrinterInfo() 
+        public FakeMigo ReplyPrinterInfo() 
             => FixReply("@#getprinterinfor;id:100196;state:11;modelprinting:3DBenchy.gcode;printername:100196;color:1;type:0;version:124;lock:;#@");
 
-        public void ReplyCurrentPosition(Position pos) 
+        public FakeMigo ReplyCurrentPosition(Position pos) 
             => FixReply($"@#curposition:{pos.X.ToString("#.##")};{pos.Y.ToString("#.##")};{pos.Z.ToString("#.##")};#@");
     }
 }

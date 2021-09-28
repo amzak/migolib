@@ -14,7 +14,8 @@ namespace MigoLib.Fake
                 BedTemp = 100,
                 NozzleTemp = 240,
                 HeadX = 0,
-                HeadY = 0
+                HeadY = 0,
+                Success = true
             };
 
         public static MigoStateModel State            
