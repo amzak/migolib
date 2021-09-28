@@ -9,6 +9,15 @@ jobs:
     
     steps:
     - uses: actions/checkout@v2
+    - name: Find Tag
+      id: tagger
+      uses: jimschubert/query-tag-action@v2
+      with:
+        include: 'v*'
+        abbrev: '3'
+    - name: Show Tag
+      run: |
+        echo 'Building version ${{steps.tagger.outputs.tag}}'     
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
@@ -22,6 +31,6 @@ jobs:
     - name: Upload dotnet test results
       uses: actions/upload-artifact@v2
       with:
-        name: dotnet-results-${{ matrix.dotnet-version }}
+        name: release_${{steps.tagger.outputs.tag}}
         path: build/bin/MigoToolGui/net5.0/linux-x64/publish/
         if-no-files-found: error
