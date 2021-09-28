@@ -99,7 +99,8 @@ namespace MigoToolGui.Domain
             _logger.LogDebug($"switching to {endpoint}");
             _migo?.Dispose();
             _logger.LogDebug("old migo connection disposed");
-            _migo = new Migo(_loggerFactory, endpoint);
+            
+            _migo = new Migo(_loggerFactory, endpoint, ErrorHandlingPolicy.Default);
             _logger.LogDebug("created new migo connection");
         }
 

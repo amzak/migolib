@@ -21,6 +21,7 @@ namespace MigoLib
             int sequenceLength = (int) sequence.Length;
             Span<char> charBuf = stackalloc char[sequenceLength];
             Encoding.Default.GetChars(sequence.FirstSpan, charBuf);
+
             Result = _serializer.Parse(charBuf);
             Result.Success = !_serializer.IsError;
             

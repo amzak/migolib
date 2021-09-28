@@ -9,6 +9,12 @@ namespace MigoLib.Socket
         {
         }
 
+        public SafeSocketException(string message) 
+            : base(message)
+        {
+            
+        }
+
         public SafeSocketException(Exception exception, string message)
             : base(message, exception)
         {

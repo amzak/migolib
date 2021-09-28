@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MigoLib.Socket;
+using Nito.AsyncEx;
 
 namespace MigoLib
 {
@@ -33,7 +34,9 @@ namespace MigoLib
 
         private readonly CancellationTokenSource _lifetimeCts;
 
-        public MigoReaderWriter(IPEndPoint endPoint, ILoggerFactory loggerFactory)
+        private readonly AsyncManualResetEvent _startListening;
+
+        public MigoReaderWriter(IPEndPoint endPoint, ILoggerFactory loggerFactory, ErrorHandlingPolicy errorPolicy)
         {
             _endPoint = endPoint;
             _logger = loggerFactory.CreateLogger<MigoReaderWriter>();
@@ -47,13 +50,19 @@ namespace MigoLib
             
             var socketLogger = loggerFactory.CreateLogger<SafeSocket>();
 
-            _socket = new SafeSocket(socketLogger, endPoint);
+            _socket = new SafeSocket(socketLogger, endPoint, errorPolicy);
+
+            _startListening = new AsyncManualResetEvent();
 
             Task.Run(Start);
         }
 
         private async Task Start()
         {
+            _logger.LogDebug($"waiting for signal to start listening on... {_endPoint}");
+
+            await _startListening.WaitAsync().ConfigureAwait(false);
+
             _logger.LogDebug($"started... {_endPoint}");
 
             var readPipeTask = ReadPipeAsync();
@@ -105,29 +114,39 @@ namespace MigoLib
         private async Task ReadPipeAsync()
         {
             _logger.LogDebug("pipe reader started...");
-            var reader = _pipe.Reader;
-            ReadResult result;
 
-            do
+            try
             {
-                _logger.LogDebug($"reading from pipe...");
+                var reader = _pipe.Reader;
+                ReadResult result;
 
-                result = await reader.ReadAsync(_lifetimeCts.Token)
-                    .ConfigureAwait(false);
-                ReadOnlySequence<byte> buffer = result.Buffer;
+                do
+                {
+                    _logger.LogDebug($"reading from pipe...");
 
-                _logger.LogDebug($"reader result {result.IsCompleted} {result.IsCanceled} {buffer.Length}");
+                    result = await reader.ReadAsync(_lifetimeCts.Token)
+                        .ConfigureAwait(false);
+                    ReadOnlySequence<byte> buffer = result.Buffer;
 
-                var consumed = ProcessBuffer(ref buffer);
+                    _logger.LogDebug($"reader result {result.IsCompleted} {result.IsCanceled} {buffer.Length}");
 
-                reader.AdvanceTo(buffer.GetPosition(consumed), buffer.End);
+                    var consumed = ProcessBuffer(ref buffer);
 
-                _logger.LogDebug($"consumed {consumed}");
-            } while (!result.IsCompleted);
+                    reader.AdvanceTo(buffer.GetPosition(consumed), buffer.End);
 
-            await reader.CompleteAsync().ConfigureAwait(false);
+                    _logger.LogDebug($"consumed {consumed} bytes");
+                } while (!result.IsCompleted);
 
-            _logger.LogDebug("pipe reader completed");
+                await reader.CompleteAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "pipe reader aborted");
+            }
+            finally
+            {
+                _logger.LogDebug("pipe reader completed");
+            }
         }
 
         private long ProcessBuffer(ref ReadOnlySequence<byte> incomingBuffer)
@@ -143,10 +162,21 @@ namespace MigoLib
                     break;
                 }
 
+                lock (_requestsRepliesLock)
+                {
+                    var requestsCount = _requestsReplies.Count;
+                    var streamsCount = _streams.Count;
+                    if (requestsCount > 0 || streamsCount > 0)
+                    {
+                        _logger.LogDebug($"requests {requestsCount} streams {streamsCount}");
+                    }
+                }
+                
                 ParseStream(resultBuffer);
                 ParseForRequests(resultBuffer);
 
                 consumed += resultBuffer.Length + _startMarker.Length + _endMarker.Length;
+                _logger.LogTrace($"consumed {consumed} bytes from buffer of {incomingBuffer.Length}");
             } while (true);
 
             _logger.LogDebug($"processed buffer of size {incomingBuffer.Length} offset {consumed}");
@@ -155,8 +185,11 @@ namespace MigoLib
 
         private void ParseStream(ReadOnlySequence<byte> resultBuffer)
         {
-            _logger.LogDebug($"looking for stream response (streams: {_streams.Count})");
-
+            if (_streams.Count == 0)
+            {
+                return;
+            }
+            
             var streamsToContinue = new List<StreamedReply>(_streams.Count);
 
             while (_streams.TryTake(out var stream))
@@ -186,7 +219,6 @@ namespace MigoLib
                 requestsReplies = _requestsReplies.ToList();
             }
 
-            _logger.LogDebug($"looking for request response (requests: {requestsReplies.Count})");
             foreach (var requestsReply in requestsReplies)
             {
                 if (!requestsReply.Parser.TryParse(resultBuffer))
@@ -214,16 +246,61 @@ namespace MigoLib
             return result;
         }
 
-        public async Task<T> Get<T>(IResultParser<T> parser)
+        public async Task<T> Get<T>(Task<Memory<byte>> bufferWriter, IResultParser<T> parser)
             where T : class
         {
             var requestReply = RequestReply(parser);
+
+            var buffer = await bufferWriter.ConfigureAwait(false);
+            await Write(buffer).ConfigureAwait(false);
+            
+            _startListening.Set();
 
             var result = await requestReply.ConfigureAwait(false);
 
             return (T) result;
         }
 
+        public async Task<T> Get<T>(IAsyncEnumerable<ReadOnlyMemory<byte>> chunks, IResultParser<T> parser)
+            where T : class
+        {
+            var requestReply = RequestReply(parser);
+
+            await Write(chunks).ConfigureAwait(false);
+
+            _startListening.Set();
+
+            var result = await requestReply.ConfigureAwait(false);
+
+            return (T) result;
+        }
+
+        public async Task<T> Get<T>(IAsyncEnumerable<CommandChunk> chunks, IResultParser<T> parser)
+            where T : class
+        {
+            var requestReply = RequestReply(parser);
+
+            await Write(chunks).ConfigureAwait(false);
+
+            _startListening.Set();
+
+            var result = await requestReply.ConfigureAwait(false);
+
+            return (T) result;
+        }
+        
+        public async Task<T> Get<T>(IResultParser<T> parser)
+            where T : class
+        {
+            var requestReply = RequestReply(parser);
+
+            _startListening.Set();
+
+            var result = await requestReply.ConfigureAwait(false);
+
+            return (T) result;
+        }
+        
         private Task<object> RequestReply(IResultParser parser)
         {
             var completionSource = new TaskCompletionSource<object>();
@@ -240,6 +317,7 @@ namespace MigoLib
         public async IAsyncEnumerable<T> GetStream<T>(IResultParser<T> parser, CancellationToken token)
             where T : class
         {
+            _logger.LogTrace($"starting stream of {typeof(T).Name}");
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(
                 _lifetimeCts.Token,
                 token);
@@ -247,12 +325,15 @@ namespace MigoLib
             var streamedReply = new StreamedReply(parser, cts.Token);
             _streams.Add(streamedReply);
             
+            _startListening.Set();
+
             await foreach (var o in streamedReply)
             {
+                _logger.LogTrace($"stream of {typeof(T).Name} new item");
                 yield return (T) o;
             }
 
-            _logger.LogDebug($"stream of {typeof(T)} completed");
+            _logger.LogDebug($"stream of {typeof(T).Name} completed");
         }
 
         public async IAsyncEnumerable<SafeSocketStatus> GetConnectionStatusStream([EnumeratorCancellation] CancellationToken token)
@@ -272,6 +353,8 @@ namespace MigoLib
 
             try
             {
+                _startListening.Set();
+
                 await foreach (var status in connectionStatusStream)
                 {
                     yield return status;
@@ -297,14 +380,14 @@ namespace MigoLib
             return bytesSent;
         }
 
-        public async Task<int> Write(Memory<byte> buffer)
+        private async ValueTask<int> Write(Memory<byte> buffer)
         {
-            return await _socket
-                .SendAsync(buffer)
-                .ConfigureAwait(false);
+            var sent = await _socket.SendAsync(buffer).ConfigureAwait(false);
+
+            return sent;
         }
 
-        public async Task<int> Write(IAsyncEnumerable<CommandChunk> chunks)
+        private async Task<int> Write(IAsyncEnumerable<CommandChunk> chunks)
         {
             int bytesSent = 0;
 
@@ -319,7 +402,7 @@ namespace MigoLib
             return bytesSent;
         }
 
-        public async Task<int> Write(IAsyncEnumerable<ReadOnlyMemory<byte>> chunks)
+        private async Task<int> Write(IAsyncEnumerable<ReadOnlyMemory<byte>> chunks)
         {
             int bytesSent = 0;
 

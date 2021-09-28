@@ -21,45 +21,36 @@ namespace MigoLib
         private readonly ILogger<Migo> _logger;
         private readonly MigoReaderWriter _readerWriter;
 
-        public Migo(ILoggerFactory loggerFactory, MigoEndpoint endpoint)
+        public Migo(ILoggerFactory loggerFactory, MigoEndpoint endpoint, ErrorHandlingPolicy errorPolicy)
         {   
             _logger = loggerFactory.CreateLogger<Migo>();
 
             var (ip, port) = endpoint;
             var endPoint = new IPEndPoint(ip, port);
             
-            _readerWriter = new MigoReaderWriter(endPoint, loggerFactory);
+            _readerWriter = new MigoReaderWriter(endPoint, loggerFactory, errorPolicy);
         }
 
         public async Task<ZOffsetModel> SetZOffset(double zOffset)
         {
-            var chunks = CommandChain
+            var result = await CommandChain
                 .Start()
                 .SetZOffset(zOffset)
                 .GetZOffset()
-                .AsChunks();
+                .GetResult(Parsers.GetZOffset)
+                .ExecuteChunksAsync(_readerWriter)
+                .ConfigureAwait(false);
 
-            await _readerWriter.Write(chunks)
-                .ConfigureAwait(false);
-            
-            var result = await _readerWriter.Get(Parsers.GetZOffset)
-                .ConfigureAwait(false);
-            
             return result;
         }
 
         public async Task<ZOffsetModel> GetZOffset()
         {
-            var buffer = await CommandChain
+            var result = await CommandChain
                 .Start()
                 .GetZOffset()
-                .ExecuteAsync()
-                .ConfigureAwait(false);
-    
-            await _readerWriter.Write(buffer)
-                .ConfigureAwait(false);
-            
-            var result = await _readerWriter.Get(Parsers.GetZOffset)
+                .GetResult(Parsers.GetZOffset)
+                .ExecuteAsync(_readerWriter)
                 .ConfigureAwait(false);
             
             return result;
@@ -75,93 +66,68 @@ namespace MigoLib
 
         public async Task<GCodeResultModel> ExecuteGCode(string[] lines)
         {
-            var buffer = await CommandChain
+            var result = await CommandChain
                 .Start()
                 .ExecuteGCode(lines)
-                .ExecuteAsync()
-                .ConfigureAwait(false);
-
-            await _readerWriter.Write(buffer)
-                .ConfigureAwait(false);
-
-            var result = await _readerWriter.Get(Parsers.GetGCodeResult)
+                .GetResult(Parsers.GetGCodeResult)
+                .ExecuteAsync(_readerWriter)
                 .ConfigureAwait(false);
 
             return result;
         }
 
-        public async Task<UploadGCodeResult> UploadGCodeFile(string fileName)
+        public Task<UploadGCodeResult> UploadGCodeFile(string fileName)
         {
             if (!File.Exists(fileName))
             {
-                return new UploadGCodeResult
+                return Task.FromResult(new UploadGCodeResult
                 {
                     Success = false,
                     Error = "File not found"
-                };
+                });
             }
             
             var file = new GCodeFile(fileName);
 
             var command = new UploadGCodeCommand(file);
             
-            await _readerWriter.Write(command.Chunks)
-                .ConfigureAwait(false);
-
-            var result = await _readerWriter.Get(Parsers.UploadGCodeResult)
-                .ConfigureAwait(false);
-
-            return result;
+            return _readerWriter.Get(command.Chunks, Parsers.UploadGCodeResult);
         }
 
         public async Task<StartPrintResult> StartPrint(string fileName)
         {
-            var buffer = await CommandChain
+            var result = await CommandChain
                 .Start()
                 .StartPrint(fileName)
-                .ExecuteAsync()
+                .GetResult(Parsers.StartPrintResult)
+                .ExecuteAsync(_readerWriter)
                 .ConfigureAwait(false);
     
-            await _readerWriter.Write(buffer)
-                .ConfigureAwait(false);
-            
-            var result = await _readerWriter.Get(Parsers.StartPrintResult)
-                .ConfigureAwait(false);
-
             return result;
         }
 
         public async Task<StopPrintResult> StopPrint()
         {
-            var buffer = await CommandChain
+            var result = await CommandChain
                 .Start()
                 .StopPrint()
-                .ExecuteAsync()
+                .GetResult(Parsers.StopPrintResult)
+                .ExecuteAsync(_readerWriter)
                 .ConfigureAwait(false);
     
-            await _readerWriter.Write(buffer)
-                .ConfigureAwait(false);
-            
-            var result = await _readerWriter.Get(Parsers.StopPrintResult)
-                .ConfigureAwait(false);
-
             return result;
         }
 
         public async Task<PrinterInfoResult> GetPrinterInfo()
         {
-            var buffer = await CommandChain
+            _logger.LogDebug("GetPrinterInfo()");
+            var result = await CommandChain
                 .Start()
                 .GetPrinterInfo()
-                .ExecuteAsync()
+                .GetResult(Parsers.GetPrinterInfo)
+                .ExecuteAsync(_readerWriter)
                 .ConfigureAwait(false);
     
-            await _readerWriter.Write(buffer)
-                .ConfigureAwait(false);
-
-            var result = await _readerWriter.Get(Parsers.GetPrinterInfo)
-                .ConfigureAwait(false);
-
             return result;
         }
 
@@ -175,18 +141,13 @@ namespace MigoLib
         
         public async Task<CurrentPositionResult> SetCurrentPosition(double x, double y, double z)
         {
-            var buffer = await CommandChain
+            var result = await CommandChain
                 .Start()
                 .SetCurrentPosition(x, y, z)
-                .ExecuteAsync()
+                .GetResult(Parsers.GetCurrentPosition)
+                .ExecuteAsync(_readerWriter)
                 .ConfigureAwait(false);
 
-            await _readerWriter.Write(buffer)
-                .ConfigureAwait(false);
-            
-            var result = await _readerWriter.Get(Parsers.GetCurrentPosition)
-                .ConfigureAwait(false);
-            
             return result;
         }
 
