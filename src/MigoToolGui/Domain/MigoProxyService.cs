@@ -21,6 +21,7 @@ namespace MigoToolGui.Domain
         private Migo _migo;
         private readonly CancellationTokenSource _tokenSource;
         private readonly ILogger<MigoProxyService> _logger;
+        private MigoEndpoint _endpoint;
 
         public MigoProxyService(ILoggerFactory loggerFactory)
         {
@@ -96,12 +97,9 @@ namespace MigoToolGui.Domain
 
         public void SwitchTo(MigoEndpoint endpoint)
         {
-            _logger.LogDebug($"switching to {endpoint}");
-            _migo?.Dispose();
-            _logger.LogDebug("old migo connection disposed");
+            _endpoint = endpoint;
             
-            _migo = new Migo(_loggerFactory, endpoint, ErrorHandlingPolicy.Default);
-            _logger.LogDebug("created new migo connection");
+            Reconnect();
         }
 
         public Task UploadGcode(string fileName)
@@ -130,6 +128,15 @@ namespace MigoToolGui.Domain
             var logger = _loggerFactory.CreateLogger<BedLevelingCalibration>();
             var scenario = new BedLevelingCalibration(logger, _migo, BedLevelingCalibrationMode.FivePoints);
             return scenario.Execute(token);
+        }
+
+        public void Reconnect()
+        {
+            _logger.LogDebug($"connecting to {_endpoint}");
+            _migo?.Dispose();
+            
+            _migo = new Migo(_loggerFactory, _endpoint, ErrorHandlingPolicy.Default);
+            _logger.LogDebug("created new migo connection");
         }
     }
 }

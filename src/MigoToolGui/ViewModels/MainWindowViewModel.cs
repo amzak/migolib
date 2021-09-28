@@ -76,6 +76,8 @@ namespace MigoToolGui.ViewModels
         
         public ReactiveCommand<Unit, Unit> ShowEndpointsDialogCommand { get; set;}
         
+        public ReactiveCommand<Unit, Unit> ReconnectCommand { get; set;}
+
         public ManualControlViewModel ManualControl { get; }
         
         public ZOffsetCalibrationModel ZOffsetCalibration { get; }
@@ -106,6 +108,8 @@ namespace MigoToolGui.ViewModels
             ShowEndpointsDialog = new Interaction<EndpointsDialogViewModel, EndpointsListModel>();
             ShowEndpointsDialogCommand = ReactiveCommand.CreateFromTask(OnShowEndpointsDialog);
 
+            ReconnectCommand = ReactiveCommand.Create(OnReconnect);
+
             GCodeFileSelected = ReactiveCommand.CreateFromTask(
                 (Func<string, Task>)OnGCodeFileSelected);
 
@@ -118,6 +122,12 @@ namespace MigoToolGui.ViewModels
             StopPrintCommand = ReactiveCommand.CreateFromTask(StopPrint);
 
             this.WhenActivated(OnActivated);
+        }
+
+        private void OnReconnect()
+        {
+            _migoProxyService.Reconnect();
+            StartupObservables();
         }
 
         private void OnSelectedEndpointChanged(MigoEndpoint endpoint)

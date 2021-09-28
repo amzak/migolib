@@ -9,13 +9,13 @@ jobs:
     
     steps:
     - uses: actions/checkout@v2
-    - name: Find Tag
+    - name: Find current version
       id: tagger
       uses: jimschubert/query-tag-action@v2
       with:
         include: 'v*'
         abbrev: '3'
-    - name: Show Tag
+    - name: Show current version
       run: |
         echo 'Building version ${{steps.tagger.outputs.tag}}'     
     - name: Setup .NET Core
@@ -26,9 +26,9 @@ jobs:
       run: dotnet restore src
     - name: Build
       run: dotnet publish src
-    - name: Test with the dotnet CLI
+    - name: Run tests
       run: dotnet test src
-    - name: Upload dotnet test results
+    - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
         name: release_${{steps.tagger.outputs.tag}}
