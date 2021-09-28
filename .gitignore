@@ -5,3 +5,4 @@ Dumps/
 /src/.idea/
 *.DotSettings
 *.DotSettings.user
+FodyWeavers.xsd
