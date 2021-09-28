@@ -1,8 +1,7 @@
 namespace MigoLib.FileUpload
 {
-    public class UploadGCodeResult
+    public class UploadGCodeResult : ParseResult
     {
-        public bool Success { get; set; }
         public string Error { get; set; }
     }
 }

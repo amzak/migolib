@@ -1,30 +1,10 @@
-using System;
-using System.Buffers;
-using System.Text;
-
 namespace MigoLib.GCode
 {
-    public class GCodeResultParser : IResultParser<GCodeResultModel>
+    public class GCodeResultParser : ResultParser<GCodeResultModel>
     {
-        private readonly PositionalSerializer<GCodeResultModel> _positionalSerializer;
-
-        public GCodeResultParser()
+        protected override void Setup(PositionalSerializer<GCodeResultModel> serializer)
         {
-            _positionalSerializer = new PositionalSerializer<GCodeResultModel>(';')
-                .FixedString("gcodedone");
+            serializer.FixedString("gcodedone");
         }
-        
-        public bool TryParse(in ReadOnlySequence<byte> sequence)
-        {
-            int sequenceLength = (int) sequence.Length;
-            Span<char> charBuf = stackalloc char[sequenceLength];
-            Encoding.Default.GetChars(sequence.FirstSpan, charBuf);
-            Result = _positionalSerializer.Parse(charBuf);
-            Result.Success = !_positionalSerializer.IsError;
-            
-            return Result.Success;
-        }
-
-        public GCodeResultModel Result { get; private set; }
     }
 }

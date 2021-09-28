@@ -1,31 +1,13 @@
-using System;
-using System.Buffers;
-using System.Text;
-
 namespace MigoLib.ZOffset
 {
-    public class GetZOffsetParser : IResultParser<ZOffsetModel>
+    public class GetZOffsetParser : ResultParser<ZOffsetModel>
     {
-        private readonly PositionalSerializer<ZOffsetModel> _positionalSerializer;
-
-        public GetZOffsetParser()
+        protected override void Setup(PositionalSerializer<ZOffsetModel> serializer)
         {
-            _positionalSerializer = new PositionalSerializer<ZOffsetModel>(':')
+            serializer
+                .NextDelimiter(':')
                 .FixedString("ZOffsetValue")
                 .Field(x => x.ZOffset);
         }
-        
-        public bool TryParse(in ReadOnlySequence<byte> sequence)
-        {
-            int sequenceLength = (int) sequence.Length;
-            Span<char> charBuf = stackalloc char[sequenceLength];
-            Encoding.Default.GetChars(sequence.FirstSpan, charBuf);
-
-            Result = _positionalSerializer.Parse(charBuf);
-                
-            return !_positionalSerializer.IsError;
-        }
-
-        public ZOffsetModel Result { get; private set; }
     }
 }

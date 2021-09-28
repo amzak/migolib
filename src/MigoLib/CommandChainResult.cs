@@ -5,18 +5,14 @@ using System.Threading.Tasks;
 
 namespace MigoLib
 {
-    public class CommandChain : IDisposable
+    public class CommandChain
     {
         private readonly byte[] _buffer;
-        private readonly BinaryWriter _writer;
-
         private readonly List<Command> _commands;
 
         private CommandChain(byte[] buffer)
         {
             _buffer = buffer;
-            var stream = new MemoryStream(buffer);
-            _writer = new BinaryWriter(stream);
             _commands = new List<Command>();
         }
 
@@ -32,12 +28,30 @@ namespace MigoLib
             return this;
         }
         
-        public void Dispose()
+        public CommandChainResult<T> GetResult<T>(IResultParser<T> parser) where T : class 
+            => new(_commands, _buffer, parser);
+    }
+
+    public class CommandChainResult<T> : IDisposable where T : class
+    {
+        private readonly IReadOnlyCollection<Command> _commands;
+        private readonly byte[] _buffer;
+        private readonly IResultParser<T> _parser;
+        private readonly BinaryWriter _writer;
+
+        public CommandChainResult(IReadOnlyCollection<Command> commands, byte[] buffer, IResultParser<T> parser)
         {
-            _writer?.Dispose();
+            _commands = commands;
+            _buffer = buffer;
+            _parser = parser;
+            
+            var stream = new MemoryStream(buffer);
+            _writer = new BinaryWriter(stream);
         }
 
-        public async Task<Memory<byte>> ExecuteAsync()
+        public Task<T> ExecuteAsync(MigoReaderWriter readerWriter) => readerWriter.Get(WriteBuffer(), _parser);
+
+        private async Task<Memory<byte>> WriteBuffer()
         {
             foreach (var command in _commands)
             {
@@ -51,8 +65,10 @@ namespace MigoLib
             
             return memory;
         }
+        
+        public Task<T> ExecuteChunksAsync(MigoReaderWriter readerWriter) => readerWriter.Get(AsChunks(), _parser);
 
-        public async IAsyncEnumerable<ReadOnlyMemory<byte>> AsChunks()
+        private async IAsyncEnumerable<ReadOnlyMemory<byte>> AsChunks()
         {
             var memory = new ReadOnlyMemory<byte>(_buffer);
             int pos = 0;
@@ -65,6 +81,11 @@ namespace MigoLib
                 pos += bytesCount;
                 yield return chunk;
             }
+        }
+
+        public void Dispose()
+        {
+            _writer?.Dispose();
         }
     }
 }

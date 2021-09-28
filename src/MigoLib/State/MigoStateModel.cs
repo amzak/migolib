@@ -1,6 +1,6 @@
 namespace MigoLib.State
 {
-    public class MigoStateModel
+    public class MigoStateModel : ParseResult
     {    
         public double HeadX { get; set; }
         public double HeadY { get; set; }

@@ -1,7 +1,6 @@
 namespace MigoLib.GCode
 {
-    public class GCodeResultModel
+    public class GCodeResultModel : ParseResult
     {
-        public bool Success { get; set; }
     }
 }
