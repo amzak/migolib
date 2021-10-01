@@ -5,9 +5,9 @@
         <TargetFramework>net5.0</TargetFramework>
         <AssemblyName>MigoToolCli</AssemblyName>
         <RootNamespace>MigoToolCli</RootNamespace>
-        <SelfContained>true</SelfContained>
         <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
-        <PublishReadyToRun>true</PublishReadyToRun>
+        <PublishSingleFile>true</PublishSingleFile>
+        <PublishTrimmed>true</PublishTrimmed>
     </PropertyGroup>
 
     <ItemGroup>
