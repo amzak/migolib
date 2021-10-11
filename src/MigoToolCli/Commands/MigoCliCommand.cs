@@ -4,6 +4,7 @@ using System.CommandLine.Parsing;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using MigoLib;
+using MigoLib.Socket;
 using Serilog;
 using Command = System.CommandLine.Command;
 using ParseResult = System.CommandLine.Parsing.ParseResult;
@@ -30,7 +31,7 @@ namespace MigoToolCli.Commands
 
             if (!endpoint.HasValue)
             {
-                Log.Error("Invalid endpoint");
+                Log.Error("Endpoint option must be specified (Ip:Port)");
                 return ResultCode.Failure;
             }
 
@@ -38,6 +39,11 @@ namespace MigoToolCli.Commands
             {
                 await Handle(endpoint.Value).ConfigureAwait(false);
                 Log.Information("OK.");
+            }
+            catch (SafeSocketException ex)
+            {
+                Log.Error(ex.Message);
+                return ResultCode.Failure;
             }
             catch (SocketException socketException)
             {
@@ -80,6 +86,11 @@ namespace MigoToolCli.Commands
             {
                 await Handle(endpoint.Value, parameter).ConfigureAwait(false);
                 Log.Information("OK.");
+            }
+            catch (SafeSocketException ex)
+            {
+                Log.Error(ex.Message);
+                return ResultCode.Failure;
             }
             catch (SocketException socketException)
             {
