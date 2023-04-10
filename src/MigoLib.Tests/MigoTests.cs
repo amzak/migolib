@@ -13,16 +13,23 @@ namespace MigoLib.Tests
     [TestFixture]
     public class MigoTests
     {
-        public const string GCodeFile = "Resources/3DBenchy.gcode";
-        private readonly string _gCodeFileName = Path.GetFileName(GCodeFile); 
         private long _gCodeSize;
+        private int _preambleSize;
         private Migo _migo;
 
         [OneTimeSetUp]
         public void OneTimeSetup()
         {   
-            var fileInfo = new FileInfo(GCodeFile);
-            _gCodeSize = fileInfo.Length + 33;
+            var fileInfo = new FileInfo(TestEnvironment.GCodeFile);
+            
+            // total length = sizeOf(file) + preamble;
+            var fileSize = fileInfo.Length;
+            _preambleSize = "filestart;".Length
+                            + fileSize.ToString().Length
+                            + ";;".Length
+                            + TestEnvironment.GCodeFileName.Length;
+
+            _gCodeSize = fileSize + _preambleSize;
         }
 
         [SetUp]
@@ -127,14 +134,14 @@ namespace MigoLib.Tests
 
         private async Task UploadFile()
         {
-            await _migo.UploadGCodeFile(GCodeFile)
+            await _migo.UploadGCodeFile(TestEnvironment.GCodeFile)
                 .ConfigureAwait(false);
         }
 
         [Test]
         public async Task Should_verify_received_data_with_md5_hash()
         {
-            var expected = await GetMD5(GCodeFile)
+            var expected = await GetMD5(TestEnvironment.GCodeFile)
                 .ConfigureAwait(false);
 
             TestEnvironment.FakeMigo
@@ -144,7 +151,7 @@ namespace MigoLib.Tests
 
             await UploadFile().ConfigureAwait(false);
 
-            var hash = await TestEnvironment.FakeMigo.GetMD5(33)
+            var hash = await TestEnvironment.FakeMigo.GetMD5(_preambleSize)
                 .ConfigureAwait(false);
 
             hash.Should().BeEquivalentTo(expected);
@@ -179,9 +186,9 @@ namespace MigoLib.Tests
         {
             TestEnvironment.FakeMigo
                 .ReplyMode(FakeMigoMode.RequestReply)
-                .ReplyPrintStarted(_gCodeFileName);
+                .ReplyPrintStarted(TestEnvironment.GCodeFileName);
 
-            var result = await _migo.StartPrint(GCodeFile)
+            var result = await _migo.StartPrint(TestEnvironment.GCodeFile)
                 .ConfigureAwait(false);
 
             result.PrintStarted.Should().BeTrue();
@@ -195,9 +202,9 @@ namespace MigoLib.Tests
 
             TestEnvironment.FakeMigo
                 .ReplyMode(FakeMigoMode.RequestReply)
-                .ReplyPrintFailed(_gCodeFileName);
+                .ReplyPrintFailed(TestEnvironment.GCodeFileName);
 
-            var result = await _migo.StartPrint(GCodeFile)
+            var result = await _migo.StartPrint(TestEnvironment.GCodeFile)
                 .ConfigureAwait(false);
 
             result.PrintStarted.Should().BeFalse();
