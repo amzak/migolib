@@ -18,8 +18,15 @@ namespace MigoLib.Tests
         [OneTimeSetUp]
         public void Init()
         {
-            var fileInfo = new FileInfo(MigoTests.GCodeFile);
-            _gCodeSize = fileInfo.Length + 33;
+            var fileInfo = new FileInfo(TestEnvironment.GCodeFile);
+            
+            // total length = sizeOf(file) + preamble;
+            var fileSize = fileInfo.Length;
+            _gCodeSize = fileSize 
+                         +"filestart;".Length 
+                         + fileSize.ToString().Length
+                         + ";;".Length
+                         + TestEnvironment.GCodeFileName.Length;
         }
         
         [Test]
