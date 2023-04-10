@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MigoLib.CurrentPosition;
 using MigoLib.State;
-using Nito.AsyncEx;
 
 namespace MigoLib.Fake
 {
@@ -91,10 +90,11 @@ namespace MigoLib.Fake
 
             try
             {
+                var cancellationToken = _tokenSource.Token;
                 while (!_tokenSource.IsCancellationRequested)
                 {
                     _log.LogInformation("accepting new clients...");
-                    using TcpClient tcpClient = await _tcpListener.AcceptTcpClientAsync().ConfigureAwait(false);
+                    using TcpClient tcpClient = await _tcpListener.AcceptTcpClientAsync(cancellationToken).ConfigureAwait(false);
                     await HandleClient(tcpClient).ConfigureAwait(false);
                 }
             }
@@ -109,12 +109,12 @@ namespace MigoLib.Fake
 
             _log.LogInformation("stopped.");
         }
-
+        
         private async Task HandleClient(TcpClient tcpClient)
         {
             _log.LogInformation($"handling client {tcpClient.Client.LocalEndPoint} in {_mode.ToString()} mode");
 
-            var stream = tcpClient.GetStream();
+            await using NetworkStream stream = tcpClient.GetStream();
 
             switch (_mode)
             {
@@ -146,9 +146,6 @@ namespace MigoLib.Fake
                 while (!_streamCancellationToken.IsCancellationRequested || !_tokenSource.IsCancellationRequested)
                 {
                     await WriteReply(stream, FakeReplies.RandomState)
-                        .ConfigureAwait(false);
-
-                    await Task.Delay(1000, _streamCancellationToken)
                         .ConfigureAwait(false);
                 }
             }
@@ -200,11 +197,12 @@ namespace MigoLib.Fake
 
                 await _receiveStream.WriteAsync(_buffer.Slice(0, received), _tokenSource.Token)
                     .ConfigureAwait(false);
-                await _receiveStream.FlushAsync(_tokenSource.Token)
-                    .ConfigureAwait(false);
 
                 _log.LogDebug($"received {received.ToString()} total {receivedTotal.ToString()} bytes");
             }
+            
+            await _receiveStream.FlushAsync(_tokenSource.Token)
+                .ConfigureAwait(false);
             
             await WriteReply(stream, _fixedReply)
                 .ConfigureAwait(false);
